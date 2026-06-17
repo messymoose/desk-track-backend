@@ -1,0 +1,1889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="DESK/TRACK" />
+<meta name="theme-color" content="#0d1117" />
+<title>DESK/TRACK</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" href="icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  html, body { margin: 0; padding: 0; background: #0d1117; -webkit-text-size-adjust: 100%; }
+  #root { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  * { -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script>
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef
+} = React;
+const e = React.createElement;
+
+// ============ DESK/TRACK data layer (backend-synced) ============
+// The backend URL is baked in so the app auto-connects. Replace
+// BACKEND_URL below with your Render backend URL before deploying.
+const BACKEND_URL = "__BACKEND_URL__";
+
+// ---- icons (lucide-style, MIT) ----
+function makeIcon(children) {
+  return ({
+    size = 16,
+    color = "currentColor",
+    fill = "none",
+    strokeWidth = 2,
+    className = "",
+    style = {}
+  } = {}) => React.createElement("svg", {
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill,
+    stroke: color,
+    strokeWidth,
+    strokeLinecap: "round",
+    strokeLinejoin: "round",
+    className,
+    style
+  }, children);
+}
+const P = d => React.createElement("path", {
+  key: d.slice(0, 8),
+  d
+});
+const C = (cx, cy, r) => React.createElement("circle", {
+  key: `c${cx}${cy}${r}`,
+  cx,
+  cy,
+  r
+});
+const L = (x1, y1, x2, y2) => React.createElement("line", {
+  key: `l${x1}${y1}${x2}${y2}`,
+  x1,
+  y1,
+  x2,
+  y2
+});
+const Poly = pts => React.createElement("polyline", {
+  key: pts.slice(0, 6),
+  points: pts
+});
+const Rc = (x, y, w, h, rx) => React.createElement("rect", {
+  key: `r${x}${y}`,
+  x,
+  y,
+  width: w,
+  height: h,
+  rx
+});
+const Search = makeIcon([C(11, 11, 8), L(21, 21, 16.65, 16.65)]);
+const Briefcase = makeIcon([Rc(2, 7, 20, 14, 2), P("M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16")]);
+const Users = makeIcon([P("M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"), C(9, 7, 4), P("M22 21v-2a4 4 0 0 0-3-3.87"), P("M16 3.13a4 4 0 0 1 0 7.75")]);
+const Mail = makeIcon([Rc(2, 4, 20, 16, 2), P("m22 7-10 5L2 7")]);
+const RefreshCw = makeIcon([P("M3 12a9 9 0 0 1 15-6.7L21 8"), P("M21 3v5h-5"), P("M21 12a9 9 0 0 1-15 6.7L3 16"), P("M3 21v-5h5")]);
+const ExternalLink = makeIcon([P("M15 3h6v6"), P("M10 14 21 3"), P("M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6")]);
+const Plus = makeIcon([L(12, 5, 12, 19), L(5, 12, 19, 12)]);
+const Trash2 = makeIcon([P("M3 6h18"), P("M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"), L(10, 11, 10, 17), L(14, 11, 14, 17)]);
+const Star = makeIcon([P("m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z")]);
+const Copy = makeIcon([Rc(9, 9, 13, 13, 2), P("M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1")]);
+const Check = makeIcon([Poly("20 6 9 17 4 12")]);
+const ArrowUpRight = makeIcon([P("M7 7h10v10"), P("M7 17 17 7")]);
+const Clock = makeIcon([C(12, 12, 10), Poly("12 6 12 12 16 14")]);
+const Target = makeIcon([C(12, 12, 10), C(12, 12, 6), C(12, 12, 2)]);
+const FileText = makeIcon([P("M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"), Poly("14 2 14 8 20 8"), L(16, 13, 8, 13), L(16, 17, 8, 17)]);
+const Lock = makeIcon([Rc(3, 11, 18, 11, 2), P("M7 11V7a5 5 0 0 1 10 0v4")]);
+
+// ---- backend client ----
+function api(token) {
+  const base = BACKEND_URL.replace(/\/$/, "");
+  const headers = (extra = {}) => ({
+    Authorization: "Bearer " + token,
+    ...extra
+  });
+  return {
+    base,
+    async login() {
+      const r = await fetch(base + "/api/login", {
+        headers: headers()
+      });
+      return r.ok;
+    },
+    async getAll() {
+      const r = await fetch(base + "/api/data", {
+        headers: headers()
+      });
+      if (!r.ok) throw new Error("auth");
+      return r.json();
+    },
+    async put(key, value) {
+      const r = await fetch(base + "/api/data/" + key, {
+        method: "POST",
+        headers: headers({
+          "Content-Type": "application/json"
+        }),
+        body: JSON.stringify({
+          value
+        })
+      });
+      return r.ok;
+    },
+    fetchUrl: u => base + "/fetch?url=" + encodeURIComponent(u)
+  };
+}
+
+// Remember the passphrase locally so devices auto-connect after first login.
+const TOKEN_KEY = "desktrack_token";
+function loadToken() {
+  try {
+    return localStorage.getItem(TOKEN_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+function saveToken(t) {
+  try {
+    localStorage.setItem(TOKEN_KEY, t);
+  } catch {}
+}
+
+// ---- Login gate ----
+function Login({
+  onSubmit
+}) {
+  const [pass, setPass] = useState("");
+  return e("div", {
+    style: S.center
+  }, e("div", {
+    style: S.loginCard
+  }, e("div", {
+    style: {
+      ...S.mark,
+      fontSize: 18,
+      display: "inline-block",
+      marginBottom: 16
+    }
+  }, "FI"), e("div", {
+    style: S.title
+  }, "DESK", e("span", {
+    style: {
+      color: "var(--amber)"
+    }
+  }, "/"), "TRACK"), e("p", {
+    style: S.loginHint
+  }, "Enter your passphrase to sync your contacts, targets, and templates across devices."), e("input", {
+    style: S.input,
+    type: "password",
+    placeholder: "Passphrase",
+    value: pass,
+    onChange: ev => setPass(ev.target.value),
+    onKeyDown: ev => ev.key === "Enter" && onSubmit(pass),
+    className: "input"
+  }), e("button", {
+    style: {
+      ...S.addBtn,
+      width: "100%",
+      justifyContent: "center",
+      marginTop: 12
+    },
+    className: "addbtn",
+    onClick: () => onSubmit(pass)
+  }, e(Lock, {
+    size: 15
+  }), " Connect")));
+}
+function SetupNeeded() {
+  return e("div", {
+    style: S.center
+  }, e("div", {
+    style: S.loginCard
+  }, e("div", {
+    style: S.title
+  }, "Backend not set"), e("p", {
+    style: S.loginHint
+  }, "This app needs its backend URL configured before it can sync. Open the deploy guide, deploy the backend on Render, then paste its URL into the app's BACKEND_URL and rebuild.")));
+}
+
+// ---- Postings ----
+function Jobs({
+  jobs,
+  loading,
+  status,
+  refresh,
+  isSaved,
+  toggleSave
+}) {
+  const [q, setQ] = useState(""),
+    [nyOnly, setNyOnly] = useState(true),
+    [fiOnly, setFiOnly] = useState(false);
+  const filtered = jobs.filter(j => {
+    if (nyOnly && !j.location.toLowerCase().includes("new york")) return false;
+    if (fiOnly && j.score < 3) return false;
+    if (q && !`${j.title} ${j.firm} ${j.location}`.toLowerCase().includes(q.toLowerCase())) return false;
+    return true;
+  });
+  const targetJobs = filtered.filter(j => j.isTarget),
+    poolJobs = filtered.filter(j => !j.isTarget);
+  const row = j => e("div", {
+    key: j.id,
+    style: S.jobRow,
+    className: "jobrow"
+  }, e("button", {
+    onClick: () => toggleSave(j),
+    style: S.starBtn,
+    className: "star",
+    title: isSaved(j.id) ? "Unsave" : "Save"
+  }, e(Star, {
+    size: 16,
+    fill: isSaved(j.id) ? "var(--amber)" : "none",
+    color: isSaved(j.id) ? "var(--amber)" : "var(--dim)"
+  })), e("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, e("div", {
+    style: S.jobTitle
+  }, j.title, j.isNew && e("span", {
+    style: S.newTag
+  }, "NEW"), j.score >= 3 && e("span", {
+    style: S.fiTag
+  }, "FI")), e("div", {
+    style: S.jobMeta
+  }, e("span", {
+    style: S.firmName
+  }, j.firm), " · ", j.location)), e("a", {
+    href: j.url,
+    target: "_blank",
+    rel: "noreferrer",
+    style: S.openLink,
+    className: "openlink"
+  }, "Apply ", e(ArrowUpRight, {
+    size: 13
+  })));
+  return e("div", null, e("div", {
+    style: S.toolbar
+  }, e("div", {
+    style: S.searchWrap
+  }, e(Search, {
+    size: 16,
+    style: {
+      color: "var(--dim)"
+    }
+  }), e("input", {
+    style: S.search,
+    placeholder: "Search role, firm, location…",
+    value: q,
+    onChange: ev => setQ(ev.target.value)
+  })), e("button", {
+    onClick: () => setNyOnly(!nyOnly),
+    style: {
+      ...S.chip,
+      ...(nyOnly ? S.chipOn : {})
+    },
+    className: "chip"
+  }, "NYC only"), e("button", {
+    onClick: () => setFiOnly(!fiOnly),
+    style: {
+      ...S.chip,
+      ...(fiOnly ? S.chipOn : {})
+    },
+    className: "chip"
+  }, "Fixed income"), e("button", {
+    onClick: refresh,
+    disabled: loading,
+    style: S.refresh,
+    className: "refresh"
+  }, e(RefreshCw, {
+    size: 14,
+    className: loading ? "spin" : ""
+  }), loading ? "Loading" : "Refresh")), e("div", {
+    style: S.status
+  }, e(Clock, {
+    size: 12
+  }), " ", status), targetJobs.length > 0 && e("div", {
+    style: S.sectionLabel
+  }, "FROM YOUR TARGETS"), e("div", {
+    style: S.list
+  }, targetJobs.map(row)), poolJobs.length > 0 && e("div", {
+    style: {
+      ...S.sectionLabel,
+      marginTop: 18
+    }
+  }, "OTHER S&T FIRMS"), e("div", {
+    style: S.list
+  }, poolJobs.map(row)), !loading && filtered.length === 0 && e("div", {
+    style: S.empty
+  }, "No postings match these filters. Try turning off NYC-only, or Refresh."));
+}
+
+// ---- Targets (all 119, live vs manual) ----
+function Targets({
+  targets,
+  contacts,
+  setTab,
+  save
+}) {
+  const [side, setSide] = useState("All"),
+    [tq, setTq] = useState(""),
+    [liveOnly, setLiveOnly] = useState(false);
+  const [adding, setAdding] = useState(false),
+    [nf, setNf] = useState({
+      firm: "",
+      side: "Sell Side",
+      coverage: "",
+      contact: ""
+    });
+  const sides = ["All", ...Array.from(new Set(targets.map(t => t.side).filter(Boolean)))];
+  const names = new Set(contacts.map(c => (c.name || "").toLowerCase().trim()));
+  const shown = targets.filter(t => {
+    if (side !== "All" && t.side !== side) return false;
+    if (liveOnly && !t.live) return false;
+    if (tq && !`${t.firm} ${t.contact}`.toLowerCase().includes(tq.toLowerCase())) return false;
+    return true;
+  });
+  const sideColor = s => (s || "").includes("Buy") ? "var(--green)" : (s || "").includes("Sell") ? "var(--amber)" : "#6cb6ff";
+  const addTarget = () => {
+    if (!nf.firm.trim()) return;
+    save("targets", [...targets, {
+      ...nf,
+      id: Date.now(),
+      live: false,
+      feedSlug: ""
+    }]);
+    setNf({
+      firm: "",
+      side: "Sell Side",
+      coverage: "",
+      contact: ""
+    });
+    setAdding(false);
+  };
+  const removeTarget = id => save("targets", targets.filter(t => t.id !== id));
+  const liveCount = targets.filter(t => t.live).length;
+  return e("div", null, e("div", {
+    style: S.toolbar
+  }, e("div", {
+    style: S.searchWrap
+  }, e(Search, {
+    size: 16,
+    style: {
+      color: "var(--dim)"
+    }
+  }), e("input", {
+    style: S.search,
+    placeholder: "Search firm or contact…",
+    value: tq,
+    onChange: ev => setTq(ev.target.value)
+  })), e("button", {
+    onClick: () => setLiveOnly(!liveOnly),
+    style: {
+      ...S.chip,
+      ...(liveOnly ? S.chipOn : {})
+    },
+    className: "chip"
+  }, "Live feed only"), e("button", {
+    onClick: () => setAdding(!adding),
+    style: S.refresh,
+    className: "refresh"
+  }, e(Plus, {
+    size: 14
+  }), "Add")), e("div", {
+    style: S.toolbar
+  }, e("span", {
+    style: S.crmCount
+  }, `${shown.length} of ${targets.length} · ${liveCount} live feeds`), sides.map(s => e("button", {
+    key: s,
+    onClick: () => setSide(s),
+    style: {
+      ...S.chip,
+      ...(side === s ? S.chipOn : {})
+    },
+    className: "chip"
+  }, s))), adding && e("div", {
+    style: S.addCard
+  }, e("div", {
+    style: {
+      ...S.addGrid,
+      gridTemplateColumns: "1fr 1fr"
+    }
+  }, e("input", {
+    style: S.input,
+    placeholder: "Firm",
+    value: nf.firm,
+    onChange: ev => setNf({
+      ...nf,
+      firm: ev.target.value
+    }),
+    className: "input"
+  }), e("input", {
+    style: S.input,
+    placeholder: "Coverage owner",
+    value: nf.coverage,
+    onChange: ev => setNf({
+      ...nf,
+      coverage: ev.target.value
+    }),
+    className: "input"
+  })), e("div", {
+    style: {
+      ...S.addGrid,
+      gridTemplateColumns: "1fr 1fr",
+      marginTop: 8
+    }
+  }, e("select", {
+    style: S.select,
+    value: nf.side,
+    onChange: ev => setNf({
+      ...nf,
+      side: ev.target.value
+    }),
+    className: "select"
+  }, ["Buy Side", "Sell Side", "Platform"].map(s => e("option", {
+    key: s
+  }, s))), e("input", {
+    style: S.input,
+    placeholder: "Contact (optional)",
+    value: nf.contact,
+    onChange: ev => setNf({
+      ...nf,
+      contact: ev.target.value
+    }),
+    className: "input"
+  })), e("button", {
+    onClick: addTarget,
+    style: S.addBtn,
+    className: "addbtn"
+  }, e(Plus, {
+    size: 15
+  }), " Add target")), e("div", {
+    style: S.list
+  }, shown.map((t, i) => {
+    const linked = t.contact && names.has(t.contact.toLowerCase().trim());
+    const careers = `https://www.google.com/search?q=${encodeURIComponent(t.firm + " careers fixed income")}`;
+    return e("div", {
+      key: t.id ?? i,
+      style: S.jobRow,
+      className: "jobrow"
+    }, e("span", {
+      style: {
+        ...S.sideDot,
+        background: sideColor(t.side)
+      },
+      title: t.side
+    }), e("div", {
+      style: {
+        flex: 1,
+        minWidth: 0
+      }
+    }, e("div", {
+      style: S.jobTitle
+    }, t.firm, t.live ? e("span", {
+      style: S.liveTag
+    }, "LIVE") : e("span", {
+      style: S.manualTag
+    }, "MANUAL")), e("div", {
+      style: S.jobMeta
+    }, e("span", {
+      style: {
+        color: sideColor(t.side)
+      }
+    }, t.side || "—"), t.coverage ? ` · ${t.coverage}` : "", t.contact ? e(React.Fragment, null, " · ", linked ? e("button", {
+      onClick: () => setTab("crm"),
+      style: S.linkContact,
+      className: "openlink"
+    }, t.contact + " ↗") : e("span", {
+      style: {
+        color: "var(--dim)"
+      }
+    }, t.contact)) : "")), linked && e("span", {
+      style: S.fiTag
+    }, "IN NETWORK"), !t.live && e("a", {
+      href: careers,
+      target: "_blank",
+      rel: "noreferrer",
+      style: S.iconLink,
+      className: "openlink",
+      title: "Search careers page"
+    }, e(ExternalLink, {
+      size: 15
+    })), e("button", {
+      onClick: () => removeTarget(t.id),
+      style: S.iconBtn,
+      className: "iconbtn"
+    }, e(Trash2, {
+      size: 15
+    })));
+  })), shown.length === 0 && e("div", {
+    style: S.empty
+  }, "No firms match these filters."));
+}
+
+// ---- Saved pipeline ----
+function Pipeline({
+  saved,
+  save
+}) {
+  const stages = ["Interested", "Applied", "In process", "Offer", "Closed"];
+  if (!saved.length) return e("div", {
+    style: S.empty
+  }, "Nothing saved yet. Star postings on the Postings tab to build your pipeline.");
+  return e("div", {
+    style: S.panel
+  }, saved.map(j => e("div", {
+    key: j.id,
+    style: S.pipeRow
+  }, e("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, e("div", {
+    style: S.jobTitle
+  }, j.title, j.isTarget && e("span", {
+    style: S.fiTag
+  }, "TARGET")), e("div", {
+    style: S.jobMeta
+  }, e("span", {
+    style: S.firmName
+  }, j.firm), " · ", j.location)), e("select", {
+    value: j.stage,
+    onChange: ev => save("saved", saved.map(x => x.id === j.id ? {
+      ...x,
+      stage: ev.target.value
+    } : x)),
+    style: S.select,
+    className: "select"
+  }, stages.map(s => e("option", {
+    key: s
+  }, s))), e("a", {
+    href: j.url,
+    target: "_blank",
+    rel: "noreferrer",
+    style: S.iconLink,
+    className: "openlink"
+  }, e(ExternalLink, {
+    size: 15
+  })), e("button", {
+    onClick: () => save("saved", saved.filter(x => x.id !== j.id)),
+    style: S.iconBtn,
+    className: "iconbtn"
+  }, e(Trash2, {
+    size: 15
+  })))));
+}
+
+// ---- Network CRM ----
+function CRM({
+  contacts,
+  save,
+  draftFor
+}) {
+  const [f, setF] = useState({
+      name: "",
+      firm: "",
+      desk: "",
+      note: "",
+      email: ""
+    }),
+    [cq, setCq] = useState("");
+  const shown = contacts.filter(c => !cq || `${c.name} ${c.firm} ${c.desk} ${c.note}`.toLowerCase().includes(cq.toLowerCase()));
+  const add = () => {
+    if (!f.name.trim()) return;
+    save("contacts", [...contacts, {
+      ...f,
+      id: Date.now(),
+      status: "To contact",
+      addedAt: Date.now()
+    }]);
+    setF({
+      name: "",
+      firm: "",
+      desk: "",
+      note: "",
+      email: ""
+    });
+  };
+  const cycle = id => {
+    const o = ["To contact", "Reached out", "Replied", "Met", "Cold"];
+    save("contacts", contacts.map(x => x.id === id ? {
+      ...x,
+      status: o[(o.indexOf(x.status) + 1) % o.length]
+    } : x));
+  };
+  return e("div", null, e("div", {
+    style: S.addCard
+  }, e("div", {
+    style: S.addGrid
+  }, e("input", {
+    style: S.input,
+    placeholder: "Name",
+    value: f.name,
+    onChange: ev => setF({
+      ...f,
+      name: ev.target.value
+    }),
+    className: "input"
+  }), e("input", {
+    style: S.input,
+    placeholder: "Firm",
+    value: f.firm,
+    onChange: ev => setF({
+      ...f,
+      firm: ev.target.value
+    }),
+    className: "input"
+  }), e("input", {
+    style: S.input,
+    placeholder: "Desk",
+    value: f.desk,
+    onChange: ev => setF({
+      ...f,
+      desk: ev.target.value
+    }),
+    className: "input"
+  })), e("div", {
+    style: {
+      ...S.addGrid,
+      gridTemplateColumns: "1fr 1fr",
+      marginTop: 8
+    }
+  }, e("input", {
+    style: S.input,
+    placeholder: "Email",
+    value: f.email,
+    onChange: ev => setF({
+      ...f,
+      email: ev.target.value
+    }),
+    className: "input"
+  }), e("input", {
+    style: S.input,
+    placeholder: "Role / how you know them",
+    value: f.note,
+    onChange: ev => setF({
+      ...f,
+      note: ev.target.value
+    }),
+    className: "input"
+  })), e("button", {
+    onClick: add,
+    style: S.addBtn,
+    className: "addbtn"
+  }, e(Plus, {
+    size: 15
+  }), " Add contact")), e("div", {
+    style: S.crmHead
+  }, e("span", {
+    style: S.crmCount
+  }, contacts.length + " contacts"), e("div", {
+    style: S.searchWrap
+  }, e(Search, {
+    size: 15,
+    style: {
+      color: "var(--dim)"
+    }
+  }), e("input", {
+    style: S.search,
+    placeholder: "Search name, firm, desk…",
+    value: cq,
+    onChange: ev => setCq(ev.target.value)
+  }))), e("div", {
+    style: S.panel
+  }, shown.map(c => e("div", {
+    key: c.id,
+    style: S.contactRow
+  }, e("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, e("div", {
+    style: S.jobTitle
+  }, c.name, c.desk && e("span", {
+    style: S.deskTag
+  }, c.desk)), e("div", {
+    style: S.jobMeta
+  }, (c.firm || "—") + (c.note ? ` · ${c.note}` : "") + (c.email ? ` · ${c.email}` : ""))), e("button", {
+    onClick: () => cycle(c.id),
+    style: S.statusPill,
+    className: "chip"
+  }, c.status), e("button", {
+    onClick: () => draftFor(c.id),
+    style: S.draftBtn,
+    className: "chip",
+    title: "Draft outreach"
+  }, e(Mail, {
+    size: 14
+  })), e("button", {
+    onClick: () => save("contacts", contacts.filter(x => x.id !== c.id)),
+    style: S.iconBtn,
+    className: "iconbtn"
+  }, e(Trash2, {
+    size: 15
+  })))), contacts.length > 0 && shown.length === 0 && e("div", {
+    style: S.empty
+  }, `No contacts match "${cq}".`)));
+}
+
+// ---- Outreach ----
+function Outreach({
+  contacts,
+  templates,
+  profile,
+  save,
+  preselectId,
+  clearPreselect
+}) {
+  const [sel, setSel] = useState(contacts[0]?.id || null);
+  const [tplId, setTplId] = useState(templates[0]?.id || null);
+  const [copied, setCopied] = useState("");
+  useEffect(() => {
+    if (preselectId != null) {
+      setSel(preselectId);
+      clearPreselect && clearPreselect();
+    }
+  }, [preselectId]); // eslint-disable-line
+  useEffect(() => {
+    if (!contacts.length) {
+      if (sel !== null) setSel(null);
+      return;
+    }
+    if (!contacts.some(c => c.id === sel)) setSel(contacts[0].id);
+  }, [contacts, sel]);
+  const contact = contacts.find(c => c.id === sel);
+  const tpl = templates.find(t => t.id === tplId) || templates[0];
+  const draft = contact && tpl ? draftFromTemplate(tpl, contact, profile) : null;
+  const copy = (text, which) => {
+    navigator.clipboard?.writeText(text);
+    setCopied(which);
+    setTimeout(() => setCopied(""), 1400);
+  };
+  const setProfile = patch => save("profile", {
+    ...profile,
+    ...patch
+  });
+  return e("div", {
+    style: S.outGrid,
+    className: "outgrid"
+  }, e("div", {
+    style: S.outSide
+  }, e("div", {
+    style: S.sideLabel
+  }, "Your details"), e("input", {
+    style: S.input,
+    placeholder: "Your name",
+    value: profile.name || "",
+    onChange: ev => setProfile({
+      name: ev.target.value
+    }),
+    className: "input"
+  }), e("input", {
+    style: {
+      ...S.input,
+      marginTop: 8
+    },
+    placeholder: "Your background (one line)",
+    value: profile.background || "",
+    onChange: ev => setProfile({
+      background: ev.target.value
+    }),
+    className: "input"
+  }), e("div", {
+    style: {
+      ...S.sideLabel,
+      marginTop: 18
+    }
+  }, "Contact"), contacts.length ? e("select", {
+    value: sel || "",
+    onChange: ev => setSel(Number(ev.target.value)),
+    style: {
+      ...S.select,
+      width: "100%"
+    },
+    className: "select"
+  }, contacts.map(c => e("option", {
+    key: c.id,
+    value: c.id
+  }, `${c.name} — ${c.firm || "—"}`))) : e("div", {
+    style: S.hint
+  }, "Add contacts on the Network tab first."), e("div", {
+    style: {
+      ...S.sideLabel,
+      marginTop: 18
+    }
+  }, "Template"), templates.map(t => e("button", {
+    key: t.id,
+    onClick: () => setTplId(t.id),
+    style: {
+      ...S.kindBtn,
+      ...(tplId === t.id ? S.kindOn : {})
+    },
+    className: "chip"
+  }, t.label))), e("div", {
+    style: S.outMain
+  }, draft ? e(React.Fragment, null, contact.email ? e("div", {
+    style: S.fieldRow
+  }, e("span", {
+    style: S.fieldLabel
+  }, "To"), e("button", {
+    onClick: () => copy(contact.email, "to"),
+    style: S.copyBtn,
+    className: "iconbtn"
+  }, copied === "to" ? e(Check, {
+    size: 13
+  }) : e(Copy, {
+    size: 13
+  }), " " + contact.email)) : e("div", {
+    style: S.fieldRow
+  }, e("span", {
+    style: S.fieldLabel
+  }, "To"), e("span", {
+    style: {
+      fontSize: 12,
+      color: "#a06b00"
+    }
+  }, "No email — add one on Network")), e("div", {
+    style: S.fieldRow
+  }, e("span", {
+    style: S.fieldLabel
+  }, "Subject"), e("button", {
+    onClick: () => copy(draft.subject, "subj"),
+    style: S.copyBtn,
+    className: "iconbtn"
+  }, copied === "subj" ? e(Check, {
+    size: 13
+  }) : e(Copy, {
+    size: 13
+  }))), e("div", {
+    style: S.subjectBox
+  }, draft.subject), e("div", {
+    style: S.fieldRow
+  }, e("span", {
+    style: S.fieldLabel
+  }, "Body"), e("button", {
+    onClick: () => copy(draft.body, "body"),
+    style: S.copyBtn,
+    className: "iconbtn"
+  }, copied === "body" ? e(Check, {
+    size: 13
+  }) : e(Copy, {
+    size: 13
+  }), " Copy")), e("pre", {
+    style: S.bodyBox
+  }, draft.body), e("a", {
+    href: `mailto:${encodeURIComponent(contact.email || "")}?subject=${encodeURIComponent(draft.subject)}&body=${encodeURIComponent(draft.body)}`,
+    style: {
+      ...S.sendBtn,
+      ...(contact.email ? {} : S.sendBtnOff)
+    },
+    className: "addbtn",
+    onClick: ev => {
+      if (!contact.email) ev.preventDefault();
+    }
+  }, e(Mail, {
+    size: 15
+  }), " ", contact.email ? "Open in mail client" : "Add an email to send"), e("p", {
+    style: S.hint
+  }, "Opens your mail app with the draft prefilled — you review and send. Nothing is sent automatically.")) : e("div", {
+    style: S.empty
+  }, "Select a contact to draft outreach.")));
+}
+
+// ---- Templates manager ----
+function Templates({
+  templates,
+  save
+}) {
+  const [edit, setEdit] = useState(null); // id being edited or "new"
+  const blank = {
+    id: "",
+    label: "",
+    subject: "",
+    body: ""
+  };
+  const [draft, setDraft] = useState(blank);
+  const start = t => {
+    setEdit(t ? t.id : "new");
+    setDraft(t ? {
+      ...t
+    } : blank);
+  };
+  const commit = () => {
+    if (!draft.label.trim()) return;
+    const id = draft.id || "tpl" + Date.now();
+    const exists = templates.some(t => t.id === id);
+    const next = exists ? templates.map(t => t.id === id ? {
+      ...draft,
+      id
+    } : t) : [...templates, {
+      ...draft,
+      id
+    }];
+    save("templates", next);
+    setEdit(null);
+  };
+  const remove = id => save("templates", templates.filter(t => t.id !== id));
+  return e("div", null, e("div", {
+    style: {
+      ...S.toolbar,
+      justifyContent: "space-between"
+    }
+  }, e("span", {
+    style: S.crmCount
+  }, templates.length + " templates"), e("button", {
+    onClick: () => start(null),
+    style: S.refresh,
+    className: "refresh"
+  }, e(Plus, {
+    size: 14
+  }), "New template")), e("p", {
+    style: {
+      ...S.hint,
+      marginTop: 0
+    }
+  }, "Placeholders auto-fill per contact: {first}, {firm}, {desk}, {me}, {background}, {via}."), edit && e("div", {
+    style: S.addCard
+  }, e("input", {
+    style: S.input,
+    placeholder: "Template name",
+    value: draft.label,
+    onChange: ev => setDraft({
+      ...draft,
+      label: ev.target.value
+    }),
+    className: "input"
+  }), e("input", {
+    style: {
+      ...S.input,
+      marginTop: 8
+    },
+    placeholder: "Subject line",
+    value: draft.subject,
+    onChange: ev => setDraft({
+      ...draft,
+      subject: ev.target.value
+    }),
+    className: "input"
+  }), e("textarea", {
+    style: {
+      ...S.input,
+      marginTop: 8,
+      minHeight: 160,
+      fontFamily: "inherit",
+      resize: "vertical"
+    },
+    placeholder: "Body",
+    value: draft.body,
+    onChange: ev => setDraft({
+      ...draft,
+      body: ev.target.value
+    }),
+    className: "input"
+  }), e("div", {
+    style: {
+      display: "flex",
+      gap: 8,
+      marginTop: 10
+    }
+  }, e("button", {
+    onClick: commit,
+    style: S.addBtn,
+    className: "addbtn"
+  }, e(Check, {
+    size: 15
+  }), " Save"), e("button", {
+    onClick: () => setEdit(null),
+    style: S.chip,
+    className: "chip"
+  }, "Cancel"))), e("div", {
+    style: S.panel
+  }, templates.map(t => e("div", {
+    key: t.id,
+    style: S.contactRow
+  }, e("div", {
+    style: {
+      flex: 1,
+      minWidth: 0
+    }
+  }, e("div", {
+    style: S.jobTitle
+  }, t.label), e("div", {
+    style: S.jobMeta
+  }, t.subject)), e("button", {
+    onClick: () => start(t),
+    style: S.statusPill,
+    className: "chip"
+  }, "Edit"), e("button", {
+    onClick: () => remove(t.id),
+    style: S.iconBtn,
+    className: "iconbtn"
+  }, e(Trash2, {
+    size: 15
+  }))))));
+}
+const CSS = `
+:root{--ink:#0d1117;--panel:#161b22;--panel2:#1c232d;--line:#2a323d;--text:#e6edf3;--dim:#8b98a8;--amber:#f5a623;--green:#3fb950;--cream:#f4f1ea;}
+*{box-sizing:border-box}
+.spin{animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.navbtn:hover{color:var(--text)!important}
+.chip:hover,.refresh:hover{border-color:var(--amber)!important}
+.jobrow:hover{background:var(--panel2)!important}
+.star:hover{transform:scale(1.15)}
+.openlink:hover{color:var(--amber)!important}
+.iconbtn:hover{color:var(--amber)!important;background:var(--panel2)!important}
+.addbtn:hover{background:#e09915!important}
+.input:focus,.select:focus{outline:none;border-color:var(--amber)!important}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px}
+@media(max-width:720px){.outgrid{grid-template-columns:1fr!important}}
+`;
+const S = {
+  root: {
+    background: "var(--ink)",
+    minHeight: "100vh",
+    color: "var(--text)",
+    fontFamily: "Inter, sans-serif"
+  },
+  center: {
+    background: "var(--ink)",
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "var(--dim)",
+    fontFamily: "Inter, sans-serif",
+    padding: 24
+  },
+  loginCard: {
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 14,
+    padding: 28,
+    maxWidth: 360,
+    textAlign: "center"
+  },
+  loginHint: {
+    fontSize: 13,
+    color: "var(--dim)",
+    lineHeight: 1.6,
+    margin: "14px 0 18px"
+  },
+  header: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    padding: "16px 24px",
+    borderBottom: "1px solid var(--line)",
+    flexWrap: "wrap",
+    gap: 16
+  },
+  brand: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12
+  },
+  mark: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontWeight: 600,
+    fontSize: 13,
+    background: "var(--amber)",
+    color: "var(--ink)",
+    padding: "6px 8px",
+    borderRadius: 5,
+    letterSpacing: 1
+  },
+  title: {
+    fontFamily: "'Space Grotesk', sans-serif",
+    fontWeight: 700,
+    fontSize: 20,
+    letterSpacing: 1
+  },
+  sub: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11,
+    color: "var(--dim)",
+    marginTop: 1
+  },
+  nav: {
+    display: "flex",
+    gap: 4,
+    overflowX: "auto",
+    maxWidth: "100%",
+    WebkitOverflowScrolling: "touch"
+  },
+  navBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+    background: "none",
+    border: "none",
+    color: "var(--dim)",
+    fontSize: 13,
+    fontWeight: 500,
+    padding: "8px 13px",
+    borderRadius: 7,
+    cursor: "pointer",
+    fontFamily: "Inter, sans-serif",
+    position: "relative",
+    whiteSpace: "nowrap"
+  },
+  navActive: {
+    color: "var(--text)",
+    background: "var(--panel)"
+  },
+  badge: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10,
+    background: "var(--amber)",
+    color: "var(--ink)",
+    borderRadius: 9,
+    padding: "1px 6px",
+    fontWeight: 600
+  },
+  main: {
+    maxWidth: 920,
+    margin: "0 auto",
+    padding: 24
+  },
+  toolbar: {
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    flexWrap: "wrap",
+    marginBottom: 12
+  },
+  searchWrap: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 8,
+    padding: "0 12px",
+    flex: 1,
+    minWidth: 200
+  },
+  search: {
+    background: "none",
+    border: "none",
+    color: "var(--text)",
+    fontSize: 14,
+    padding: "10px 0",
+    flex: 1,
+    fontFamily: "Inter, sans-serif"
+  },
+  chip: {
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    color: "var(--dim)",
+    fontSize: 12.5,
+    padding: "9px 13px",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 500
+  },
+  chipOn: {
+    color: "var(--ink)",
+    background: "var(--amber)",
+    borderColor: "var(--amber)",
+    fontWeight: 600
+  },
+  refresh: {
+    display: "flex",
+    alignItems: "center",
+    gap: 7,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    color: "var(--text)",
+    fontSize: 13,
+    padding: "9px 14px",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: 500,
+    fontFamily: "Inter, sans-serif"
+  },
+  status: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11.5,
+    color: "var(--dim)",
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 14
+  },
+  sectionLabel: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10.5,
+    color: "var(--amber)",
+    textTransform: "uppercase",
+    letterSpacing: 1.5,
+    marginBottom: 8,
+    fontWeight: 600
+  },
+  list: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6
+  },
+  jobRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    background: "var(--panel)",
+    border: "1px solid transparent",
+    borderRadius: 9,
+    padding: "13px 15px"
+  },
+  starBtn: {
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: 2,
+    display: "flex"
+  },
+  jobTitle: {
+    fontSize: 14.5,
+    fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap"
+  },
+  jobMeta: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11.5,
+    color: "var(--dim)",
+    marginTop: 3
+  },
+  firmName: {
+    color: "var(--amber)"
+  },
+  fiTag: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9,
+    background: "rgba(63,185,80,.15)",
+    color: "var(--green)",
+    padding: "1px 5px",
+    borderRadius: 3,
+    fontWeight: 600,
+    letterSpacing: .5
+  },
+  newTag: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9,
+    background: "var(--amber)",
+    color: "var(--ink)",
+    padding: "1px 5px",
+    borderRadius: 3,
+    fontWeight: 700,
+    letterSpacing: .5
+  },
+  liveTag: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9,
+    background: "rgba(63,185,80,.15)",
+    color: "var(--green)",
+    padding: "1px 5px",
+    borderRadius: 3,
+    fontWeight: 600,
+    letterSpacing: .5
+  },
+  manualTag: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9,
+    background: "var(--panel2)",
+    color: "var(--dim)",
+    padding: "1px 5px",
+    borderRadius: 3,
+    fontWeight: 600,
+    letterSpacing: .5
+  },
+  openLink: {
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    color: "var(--dim)",
+    textDecoration: "none",
+    fontSize: 12.5,
+    fontWeight: 600,
+    fontFamily: "'IBM Plex Mono', monospace",
+    whiteSpace: "nowrap"
+  },
+  iconLink: {
+    color: "var(--dim)",
+    display: "flex",
+    padding: 6
+  },
+  empty: {
+    textAlign: "center",
+    color: "var(--dim)",
+    fontSize: 13.5,
+    padding: "48px 24px",
+    lineHeight: 1.6,
+    maxWidth: 480,
+    margin: "0 auto"
+  },
+  panel: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6
+  },
+  pipeRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 9,
+    padding: "12px 15px"
+  },
+  contactRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 9,
+    padding: "12px 15px"
+  },
+  select: {
+    background: "var(--panel2)",
+    border: "1px solid var(--line)",
+    color: "var(--text)",
+    borderRadius: 7,
+    padding: "7px 10px",
+    fontSize: 12.5,
+    fontFamily: "Inter, sans-serif",
+    cursor: "pointer"
+  },
+  iconBtn: {
+    background: "none",
+    border: "none",
+    color: "var(--dim)",
+    cursor: "pointer",
+    padding: 7,
+    borderRadius: 6,
+    display: "flex"
+  },
+  deskTag: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 9.5,
+    background: "var(--panel2)",
+    color: "var(--amber)",
+    padding: "2px 6px",
+    borderRadius: 3,
+    fontWeight: 500
+  },
+  statusPill: {
+    background: "var(--panel2)",
+    border: "1px solid var(--line)",
+    color: "var(--text)",
+    fontSize: 11.5,
+    padding: "6px 11px",
+    borderRadius: 20,
+    cursor: "pointer",
+    fontFamily: "'IBM Plex Mono', monospace",
+    whiteSpace: "nowrap"
+  },
+  draftBtn: {
+    background: "var(--panel2)",
+    border: "1px solid var(--line)",
+    color: "var(--amber)",
+    padding: "6px 9px",
+    borderRadius: 8,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center"
+  },
+  addCard: {
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 11,
+    padding: 18,
+    marginBottom: 16
+  },
+  addGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 8
+  },
+  input: {
+    background: "var(--panel2)",
+    border: "1px solid var(--line)",
+    color: "var(--text)",
+    borderRadius: 7,
+    padding: "10px 12px",
+    fontSize: 13.5,
+    fontFamily: "Inter, sans-serif",
+    width: "100%"
+  },
+  addBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    background: "var(--amber)",
+    color: "var(--ink)",
+    border: "none",
+    borderRadius: 8,
+    padding: "10px 16px",
+    fontSize: 13.5,
+    fontWeight: 600,
+    cursor: "pointer",
+    marginTop: 10,
+    fontFamily: "Inter, sans-serif"
+  },
+  hint: {
+    fontSize: 11.5,
+    color: "var(--dim)",
+    lineHeight: 1.6,
+    marginTop: 12,
+    marginBottom: 0
+  },
+  crmHead: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 12
+  },
+  crmCount: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 12,
+    color: "var(--dim)",
+    whiteSpace: "nowrap"
+  },
+  sideDot: {
+    width: 9,
+    height: 9,
+    borderRadius: "50%",
+    flexShrink: 0
+  },
+  linkContact: {
+    background: "none",
+    border: "none",
+    color: "var(--amber)",
+    cursor: "pointer",
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 11.5,
+    padding: 0
+  },
+  outGrid: {
+    display: "grid",
+    gridTemplateColumns: "260px 1fr",
+    gap: 18
+  },
+  outSide: {
+    background: "var(--panel)",
+    border: "1px solid var(--line)",
+    borderRadius: 11,
+    padding: 18,
+    height: "fit-content"
+  },
+  sideLabel: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10.5,
+    color: "var(--dim)",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 8
+  },
+  kindBtn: {
+    display: "block",
+    width: "100%",
+    textAlign: "left",
+    marginTop: 6,
+    background: "var(--panel2)",
+    border: "1px solid var(--line)",
+    color: "var(--dim)",
+    fontSize: 12.5,
+    padding: "9px 12px",
+    borderRadius: 7,
+    cursor: "pointer",
+    fontFamily: "Inter, sans-serif"
+  },
+  kindOn: {
+    color: "var(--ink)",
+    background: "var(--amber)",
+    borderColor: "var(--amber)",
+    fontWeight: 600
+  },
+  outMain: {
+    background: "var(--cream)",
+    borderRadius: 11,
+    padding: 22,
+    color: "#1a1a1a"
+  },
+  fieldRow: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+    marginTop: 14
+  },
+  fieldLabel: {
+    fontFamily: "'IBM Plex Mono', monospace",
+    fontSize: 10.5,
+    color: "#6b6b6b",
+    textTransform: "uppercase",
+    letterSpacing: 1
+  },
+  copyBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 5,
+    background: "#fff",
+    border: "1px solid #ddd",
+    color: "#444",
+    fontSize: 11.5,
+    padding: "5px 10px",
+    borderRadius: 6,
+    cursor: "pointer",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 500
+  },
+  sendBtn: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 7,
+    background: "var(--amber)",
+    color: "var(--ink)",
+    textDecoration: "none",
+    borderRadius: 8,
+    padding: "11px 18px",
+    fontSize: 13.5,
+    fontWeight: 600,
+    marginTop: 16,
+    fontFamily: "Inter, sans-serif",
+    cursor: "pointer"
+  },
+  sendBtnOff: {
+    background: "#e3ddd0",
+    color: "#999",
+    cursor: "not-allowed"
+  },
+  subjectBox: {
+    background: "#fff",
+    border: "1px solid #e3ddd0",
+    borderRadius: 7,
+    padding: "11px 13px",
+    fontSize: 13.5,
+    fontWeight: 600
+  },
+  bodyBox: {
+    background: "#fff",
+    border: "1px solid #e3ddd0",
+    borderRadius: 7,
+    padding: 15,
+    fontSize: 13.5,
+    lineHeight: 1.65,
+    whiteSpace: "pre-wrap",
+    fontFamily: "Inter, sans-serif",
+    margin: 0,
+    color: "#222"
+  }
+};
+
+// ---- Broader S&T firm pool (shown below targets on Postings) ----
+const ST_POOL = [{
+  slug: "point72",
+  name: "Point72"
+}, {
+  slug: "janestreet",
+  name: "Jane Street"
+}, {
+  slug: "imc",
+  name: "IMC Trading"
+}, {
+  slug: "squarepointcapital",
+  name: "Squarepoint Capital"
+}, {
+  slug: "jumptrading",
+  name: "Jump Trading"
+}, {
+  slug: "flowtraders",
+  name: "Flow Traders"
+}, {
+  slug: "virtu",
+  name: "Virtu Financial"
+}, {
+  slug: "akunacapital",
+  name: "Akuna Capital"
+}, {
+  slug: "drweng",
+  name: "DRW"
+}, {
+  slug: "optiverus",
+  name: "Optiver US"
+}, {
+  slug: "oldmissioncapital",
+  name: "Old Mission Capital"
+}, {
+  slug: "chicagotrading",
+  name: "Chicago Trading (CTC)"
+}, {
+  slug: "worldquant",
+  name: "WorldQuant"
+}, {
+  slug: "pdtpartners",
+  name: "PDT Partners"
+}, {
+  slug: "schonfeld",
+  name: "Schonfeld"
+}, {
+  slug: "fiveringsllc",
+  name: "Five Rings"
+}, {
+  slug: "gsacapital",
+  name: "GSA Capital"
+}, {
+  slug: "davinciderivatives",
+  name: "Da Vinci Derivatives"
+}];
+const FI_KW = ["fixed income", "rates", "credit", "bond", "treasury", "mortgage", "muni", "securitiz", "macro"];
+const ST_KW = ["trad", "fixed income", "rates", "credit", "securit", "sales", "macro", "quant", "execution", "structuring", "derivativ", "fx", "commodit", "portfolio"];
+function scoreJob(t) {
+  t = t.toLowerCase();
+  let s = 0;
+  if (ST_KW.some(k => t.includes(k))) s += 2;
+  if (FI_KW.some(k => t.includes(k))) s += 3;
+  if (t.includes("intern")) s -= 1;
+  return s;
+}
+async function fetchBoard(client, slug, name, isTarget) {
+  const url = `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs`;
+  const r = await fetch(client.fetchUrl(url), {
+    signal: AbortSignal.timeout(15000)
+  });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  const text = await r.text();
+  const data = JSON.parse(text);
+  if (!Array.isArray(data.jobs)) throw new Error("no jobs");
+  return data.jobs.map(j => ({
+    id: `${slug}-${j.id}`,
+    title: j.title.trim(),
+    firm: name,
+    location: j.location && j.location.name || "—",
+    url: j.absolute_url,
+    updated: j.updated_at,
+    score: scoreJob(j.title),
+    isTarget
+  }));
+}
+function draftFromTemplate(tpl, contact, profile) {
+  const first = (contact.name || "").split(" ")[0] || "there";
+  const via = (contact.note || "").replace(/^.*via /, "") || "a mutual contact";
+  const fill = s => (s || "").replaceAll("{first}", first).replaceAll("{firm}", contact.firm || "your desk").replaceAll("{desk}", contact.desk || "S&T").replaceAll("{me}", profile.name || "[Your name]").replaceAll("{background}", profile.background || "a background in fixed income markets").replaceAll("{via}", via);
+  return {
+    subject: fill(tpl.subject),
+    body: fill(tpl.body)
+  };
+}
+function App() {
+  const [token, setToken] = useState(loadToken());
+  const [authState, setAuthState] = useState("checking"); // checking | needpass | ready | error
+  const [data, setData] = useState(null);
+  const client = useMemo(() => api(token), [token]);
+
+  // tabs + jobs
+  const [tab, setTab] = useState("jobs");
+  const [jobs, setJobs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState("");
+  const [preselectId, setPreselectId] = useState(null);
+
+  // ---- auth + initial load ----
+  const loadAll = useCallback(async tk => {
+    const c = api(tk);
+    try {
+      const ok = await c.login();
+      if (!ok) {
+        setAuthState("needpass");
+        return;
+      }
+      const d = await c.getAll();
+      setData(d);
+      setAuthState("ready");
+      saveToken(tk);
+      setToken(tk);
+    } catch {
+      setAuthState("error");
+    }
+  }, []);
+  useEffect(() => {
+    if (BACKEND_URL.startsWith("__")) {
+      setAuthState("error");
+      return;
+    }
+    if (token) loadAll(token);else setAuthState("needpass");
+  }, []); // eslint-disable-line
+
+  // ---- persist helper: update a collection locally + on backend ----
+  const save = useCallback((key, value) => {
+    setData(d => ({
+      ...d,
+      [key]: value
+    }));
+    client.put(key, value);
+  }, [client]);
+
+  // ---- jobs: targets-with-feed first, then S&T pool ----
+  const seenRef = useRef(null);
+  const [newCount, setNewCount] = useState(0);
+  const refresh = useCallback(async () => {
+    if (!data) return;
+    setLoading(true);
+    setStatus("Pulling postings…");
+    const liveTargets = (data.targets || []).filter(t => t.live && t.feedSlug);
+    const targetSlugs = new Set(liveTargets.map(t => t.feedSlug));
+    const poolFirms = ST_POOL.filter(f => !targetSlugs.has(f.slug)); // avoid dupes
+    const all = [];
+    let ok = 0,
+      total = liveTargets.length + poolFirms.length;
+    for (const t of liveTargets) {
+      try {
+        all.push(...(await fetchBoard(client, t.feedSlug, t.firm, true)));
+        ok++;
+        setStatus(`Target: ${t.firm} (${ok}/${total})`);
+      } catch {}
+    }
+    for (const f of poolFirms) {
+      try {
+        all.push(...(await fetchBoard(client, f.slug, f.name, false)));
+        ok++;
+        setStatus(`${f.name} (${ok}/${total})`);
+      } catch {}
+    }
+    // sort: targets first, then score, then recency
+    all.sort((a, b) => b.isTarget - a.isTarget || b.score - a.score || new Date(b.updated) - new Date(a.updated));
+    let flagged = 0;
+    if (seenRef.current === null) seenRef.current = new Set(all.map(j => j.id));else for (const j of all) if (!seenRef.current.has(j.id)) {
+      j.isNew = true;
+      flagged++;
+      seenRef.current.add(j.id);
+    }
+    setNewCount(flagged);
+    setJobs(all);
+    const tCount = all.filter(j => j.isTarget).length;
+    setStatus(all.length ? `${all.length} postings · ${tCount} from your targets${flagged ? ` · ${flagged} new` : ""}` : "No postings returned — try Refresh.");
+    setLoading(false);
+  }, [data, client]);
+  useEffect(() => {
+    if (authState === "ready" && data) refresh();
+  }, [authState]); // eslint-disable-line
+
+  // ---- gates ----
+  if (authState === "checking") return e("div", {
+    style: S.center
+  }, "Connecting…");
+  if (authState === "error") return e(SetupNeeded, {});
+  if (authState === "needpass") return e(Login, {
+    onSubmit: tk => {
+      setAuthState("checking");
+      loadAll(tk);
+    }
+  });
+  if (!data) return e("div", {
+    style: S.center
+  }, "Loading your data…");
+  const contacts = data.contacts || [],
+    targets = data.targets || [],
+    templates = data.templates || [],
+    profile = data.profile || {},
+    saved = data.saved || [];
+  const isSaved = id => saved.some(s => s.id === id);
+  const toggleSave = job => save("saved", isSaved(job.id) ? saved.filter(x => x.id !== job.id) : [...saved, {
+    ...job,
+    savedAt: Date.now(),
+    stage: "Interested"
+  }]);
+  return e("div", {
+    style: S.root
+  }, e("style", null, CSS), e("header", {
+    style: S.header
+  }, e("div", {
+    style: S.brand
+  }, e("span", {
+    style: S.mark
+  }, "FI"), e("div", null, e("div", {
+    style: S.title
+  }, "DESK", e("span", {
+    style: {
+      color: "var(--amber)"
+    }
+  }, "/"), "TRACK"), e("div", {
+    style: S.sub
+  }, "Fixed Income S&T · Synced"))), e("nav", {
+    style: S.nav
+  }, [["jobs", Briefcase, "Postings"], ["targets", Target, "Targets"], ["pipeline", Star, "Saved"], ["crm", Users, "Network"], ["email", Mail, "Outreach"], ["templates", FileText, "Templates"]].map(([id, Icon, label]) => e("button", {
+    key: id,
+    onClick: () => setTab(id),
+    style: {
+      ...S.navBtn,
+      ...(tab === id ? S.navActive : {})
+    },
+    className: "navbtn"
+  }, e(Icon, {
+    size: 15,
+    strokeWidth: 2.2
+  }), label, id === "jobs" && newCount > 0 && e("span", {
+    style: S.badge
+  }, newCount + " new"), id === "pipeline" && saved.length > 0 && e("span", {
+    style: S.badge
+  }, saved.length), id === "crm" && contacts.length > 0 && e("span", {
+    style: S.badge
+  }, contacts.length))))), e("main", {
+    style: S.main
+  }, tab === "jobs" && e(Jobs, {
+    jobs,
+    loading,
+    status,
+    refresh,
+    isSaved,
+    toggleSave
+  }), tab === "targets" && e(Targets, {
+    targets,
+    contacts,
+    setTab,
+    save
+  }), tab === "pipeline" && e(Pipeline, {
+    saved,
+    save
+  }), tab === "crm" && e(CRM, {
+    contacts,
+    save,
+    draftFor: id => {
+      setPreselectId(id);
+      setTab("email");
+    }
+  }), tab === "email" && e(Outreach, {
+    contacts,
+    templates,
+    profile,
+    save,
+    preselectId,
+    clearPreselect: () => setPreselectId(null)
+  }), tab === "templates" && e(Templates, {
+    templates,
+    save
+  })));
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(React.createElement(App));
+</script>
+</body>
+</html>

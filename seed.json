@@ -1,0 +1,1780 @@
+{
+  "contacts": [
+    {
+      "name": "Adam Ferencz",
+      "firm": "Aurel Finance",
+      "desk": "Credit",
+      "note": "Head",
+      "email": "adam.ferencz@aurel-partners.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Adam Molino",
+      "firm": "RBC Capital Markets",
+      "desk": "Credit",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Adriene Lucier",
+      "firm": "SMBC NIkko Securities",
+      "desk": "IG",
+      "note": "Sales",
+      "email": "adrienne.lucier@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Al Rubano",
+      "firm": "Daiwa Capital Markets",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Alison Prager",
+      "firm": "Barclays Capital Inc",
+      "desk": "Credit",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Allen Oppici",
+      "firm": "SMBC Capital",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Amanda Sweely",
+      "firm": "Elliott Management",
+      "desk": "Fixed Income",
+      "note": "Analyst",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Aneesh Shinkre",
+      "firm": "Shenkman Capital",
+      "desk": "Lev. Fin",
+      "note": "Research",
+      "email": "aneesh.shinkre@shenkmancapital.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Annie Seelaus",
+      "firm": "R. Seelaus & Co.",
+      "desk": "All",
+      "note": "CEO",
+      "email": "aseelaus@rseelaus.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Art Tambaro",
+      "firm": "First Manhattan",
+      "desk": "Wealth",
+      "note": "Partner, Advisor",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Bill Castellano",
+      "firm": "Dataiku",
+      "desk": "AI",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Bill Lopez",
+      "firm": "Tradition Securities",
+      "desk": "Equities",
+      "note": "Broker",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Brad Schoele",
+      "firm": "ICE Bondpoint",
+      "desk": "Electronic Credit",
+      "note": "Trading",
+      "email": "Brad.schoelle@ice.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Brian Connors",
+      "firm": "Mizuho Securities",
+      "desk": "Inv. Grade",
+      "note": "Head",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Brian Feuer",
+      "firm": "Papamarkou Wellner Perkin",
+      "desk": "Family Office",
+      "note": "Advisor",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Brian Murphy",
+      "firm": "Truist Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Brian Diel",
+      "firm": "SMBC NIkko Securities",
+      "desk": "IG",
+      "note": "Sales",
+      "email": "bdiel@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Chris Hume",
+      "firm": "NLG Capital",
+      "desk": "Credit",
+      "note": "PM",
+      "email": "Chume@nlgcap.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Chris Noll",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Credit",
+      "note": "Head of Enterprise Valuation Advisory",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Chris Esperon",
+      "firm": "Smith & Nephew",
+      "desk": "Medical Device",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Chris Schuville",
+      "firm": "Citigroup Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Chris Albanese",
+      "firm": "Truist Securities",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Chris Cazier",
+      "firm": "UBS Securities LLC",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "christopher.cazier@ubs.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Chuck Alini",
+      "firm": "RBC Capital Markets",
+      "desk": "Generalist",
+      "note": "Sales",
+      "email": "chuck.alini@rbc.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Clay Knobler",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Lev Fin",
+      "note": "Research",
+      "email": "clay.knobler@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Dan Driscoll",
+      "firm": "SMBC Capital",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "daniel.driscoll@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Dave Inman",
+      "firm": "Deutsche Bank",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "david.inman@db.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Dennis Hannan",
+      "firm": "HSBC Securities",
+      "desk": "Lev. Fin",
+      "note": "Sales",
+      "email": "dennis.hannan@us.hsbc.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Devon King",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Rates",
+      "note": "Sales",
+      "email": "devon_king@smbc-cm.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Dylan Parker",
+      "firm": "HSBC Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Ed Reid",
+      "firm": "Roberts & Ryan Investments",
+      "desk": "Equities",
+      "note": "Head",
+      "email": "igereid@roberts-ryan.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Ed Gerbavsitis",
+      "firm": "BankAmerica Merril",
+      "desk": "Credit",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Ed D'Alessandro",
+      "firm": "Roberts & Ryan Investments",
+      "desk": "Fixed Income",
+      "note": "Head",
+      "email": "edalessandro@roberts-ryan.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Frank Sinatra Jr.",
+      "firm": "Cabrera Capital Markets",
+      "desk": "Inv. Grade",
+      "note": "Head",
+      "email": "fsinatrajr@cabreracapital.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Garrett Sweely",
+      "firm": "Morgan Stanley",
+      "desk": "Structured Prod",
+      "note": "Sales",
+      "email": "Garrett.Sweely@morganstanley.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Gary Rapp",
+      "firm": "Truist Securities",
+      "desk": "Credit",
+      "note": "Head",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Gavin Petracca",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Structured Credit",
+      "note": "Sales \u00b7 via Amanda Sweely",
+      "email": "gavin.petracca@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Grace Karagjosi",
+      "firm": "JP Morgan Securities",
+      "desk": "Inv. Grade",
+      "note": "Assoc",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Grant Byczek",
+      "firm": "Santander US Capital",
+      "desk": "Lev. Fin",
+      "note": "Trading",
+      "email": "grant.byczek@santander.us.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Greg Malloy",
+      "firm": "UBS Securities LLC",
+      "desk": "Middle Office",
+      "note": "Head",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Harry Paschalidis",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Credit",
+      "note": "Head of Securities Operations",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Howard Nifoussi",
+      "firm": "Apollo Global Manahement",
+      "desk": "Fund Wholesale",
+      "note": "Global Head Wealth",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "James DePierro",
+      "firm": "Loop Capital Markets",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "james.depierro@loopcapital.com",
+      "status": "To contact"
+    },
+    {
+      "name": "James Hogan",
+      "firm": "SMBC NIkko Securities",
+      "desk": "EM",
+      "note": "Sales",
+      "email": "james.hogan@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Jamie Weinman-Roher",
+      "firm": "SMBC NIkko Securities",
+      "desk": "IG",
+      "note": "Sales",
+      "email": "Jamie.weinman@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Jason Woodward",
+      "firm": "SMBC NIkko Securities",
+      "desk": "IG",
+      "note": "Sales",
+      "email": "jason.woodward@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Jess Sodaski",
+      "firm": "MUFG Securities",
+      "desk": "Inv. Grade",
+      "note": "Head",
+      "email": "jess.sodaski@mufgsecurities.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Jim Kenny",
+      "firm": "RBC Capital Markets",
+      "desk": "Inv. Grade",
+      "note": "SRM",
+      "email": "james.kenny@rbccm.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Joe Griffith",
+      "firm": "Citigroup Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Joe Aglione",
+      "firm": "Deutsche Bank Wealth Mgt",
+      "desk": "Fixed Income",
+      "note": "Head Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Joey Gottleib",
+      "firm": "UBS Securities LLC",
+      "desk": "HY",
+      "note": "Trader",
+      "email": "joseph.gottleib@ubs.com",
+      "status": "To contact"
+    },
+    {
+      "name": "John Dischley",
+      "firm": "Analyst Hub",
+      "desk": "Operation",
+      "note": "VP",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "John Cortese",
+      "firm": "FHN Financial",
+      "desk": "Credit",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Jon Lum",
+      "firm": "Santander US Capital",
+      "desk": "Generalist",
+      "note": "Sales",
+      "email": "jon.lum@santander.us.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Jory Seigel",
+      "firm": "Jeffries",
+      "desk": "Outsourced",
+      "note": "Head",
+      "email": "jseigel1@jeffries.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Josh Harmon",
+      "firm": "BNP Paribas",
+      "desk": "Lev. Fin",
+      "note": "Sales",
+      "email": "josh.harmon@us.bnpparibas.com",
+      "status": "To contact"
+    },
+    {
+      "name": "JP Cappa",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Credit",
+      "note": "Head of Middle Office",
+      "email": "jp.cappa@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "JR Gulka",
+      "firm": "Morgan Stanley",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "jr.gulka@morganstanley.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Kara Fernandez",
+      "firm": "Scotia Bank",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "kara.fernandez@scotiabank.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Katelyn Sherry",
+      "firm": "SMBC NIkko Securities",
+      "desk": "HY",
+      "note": "Sales",
+      "email": "katelyn.sherry@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Kathleen Scarrone",
+      "firm": "Microsoft",
+      "desk": "Cloud Computing",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Kieran Fitzpatrick",
+      "firm": "Cabrera Capital Markets",
+      "desk": "Credit",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Liv Amabile",
+      "firm": "Barclays",
+      "desk": "",
+      "note": "",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Margaret Terry",
+      "firm": "Revolve Wealth Partners",
+      "desk": "",
+      "note": "",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Mark Bowie",
+      "firm": "Piper Sandler & Co",
+      "desk": "Credit",
+      "note": "Trading",
+      "email": "mark.bowie@psc.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Maryanne Richter",
+      "firm": "JPMorgan Securities",
+      "desk": "Credit",
+      "note": "COO",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Matt Perez",
+      "firm": "Citadel Securities",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "matthew.perez@citadelsecurities.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Matt Stepanski",
+      "firm": "Workday",
+      "desk": "Cloud Computing",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Michael Chetrit",
+      "firm": "BBVA Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "michaelhenry.chetrit@bbva.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Michael Malloy",
+      "firm": "HSBC Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Michael Burke",
+      "firm": "Santander US Capital",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Michael Matyas",
+      "firm": "Stonex Financial",
+      "desk": "MBS",
+      "note": "Sales",
+      "email": "michael.matyas@stonex.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Michael Foggia",
+      "firm": "UBS Securities LLC",
+      "desk": "Fixed Income",
+      "note": "Sales",
+      "email": "michael.foggia@ubs.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Mike Fitzgerald",
+      "firm": "Citigroup Securities",
+      "desk": "Prime Services",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Mike Coffey",
+      "firm": "Jones Trading",
+      "desk": "Pref/Hybrid",
+      "note": "Broker",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Nita Bhudia",
+      "firm": "Morgan Stanley",
+      "desk": "Compliance",
+      "note": "Risk",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Pat Gallagher",
+      "firm": "Daiwa Capital Markets",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "patrick.gallagher@us.diawacm.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Patrick Bathon",
+      "firm": "SMBC NIkko Securities",
+      "desk": "IG",
+      "note": "Middle Office",
+      "email": "patrick.bathon@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Paul MacCrone",
+      "firm": "Stonex Financial",
+      "desk": "Credit",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Paul Jordan",
+      "firm": "Alphatec Spine",
+      "desk": "Medical Device",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Rob Bailenson",
+      "firm": "Assured Guaranty LTD",
+      "desk": "Municipals",
+      "note": "COO",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Rob Murray",
+      "firm": "SMBC NIkko Securities",
+      "desk": "Credit",
+      "note": "Trade Support",
+      "email": "rob.murray@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Robert Flood",
+      "firm": "Truist Securities",
+      "desk": "Inv. Grade",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Ross Brenner",
+      "firm": "ProfitTrust",
+      "desk": "Logistics",
+      "note": "Exec VP",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Scott Richter",
+      "firm": "Stonex Financial",
+      "desk": "Commodities",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Scott Marchikitis",
+      "firm": "Truist Securities",
+      "desk": "Inv. Grade",
+      "note": "Strategy",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Scott Freeman",
+      "firm": "Wells Fargo Securities",
+      "desk": "Credit",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Seth Solomons",
+      "firm": "Halo Collar",
+      "desk": "Entreprenuer",
+      "note": "CMO",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Sid Bakst",
+      "firm": "Seelaus Asset Management",
+      "desk": "Credit",
+      "note": "PM",
+      "email": "sbakst@seelausam.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Steve Papadam",
+      "firm": "SG Americas",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Steve Feinberg",
+      "firm": "SMBC Capital",
+      "desk": "Credit",
+      "note": "Head",
+      "email": "steven.feinberg@smbcnikko-si.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Tom Davis",
+      "firm": "UBS Securities LLC",
+      "desk": "CD's",
+      "note": "Head",
+      "email": "thomas.davis@ubs.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Vincent Peneety",
+      "firm": "Citadel Securities",
+      "desk": "Inv. Grade",
+      "note": "Sales",
+      "email": "vincent.peneety@citadelsecuritites.com",
+      "status": "To contact"
+    },
+    {
+      "name": "Will Celentano",
+      "firm": "JPM Private Bank",
+      "desk": "Credit",
+      "note": "Trader",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Willl Celentano",
+      "firm": "JP Morgan Private Bank",
+      "desk": "IG/ EM",
+      "note": "Trading",
+      "email": "",
+      "status": "To contact"
+    },
+    {
+      "name": "Brandon Levy",
+      "firm": "Deutsche",
+      "desk": "CRE",
+      "note": "Banking",
+      "email": "",
+      "status": "To contact"
+    }
+  ],
+  "targets": [
+    {
+      "firm": "BTIG Outsourced Trading",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "Paul Ferrigno",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Christofferson Robb",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Citibank Private Bank",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "Fran Mulvey",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "CKC Capital LLC",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Clear Street LLC",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "clearstreet",
+      "live": true
+    },
+    {
+      "firm": "DA Capital",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Delphi Capital Management",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Deutsche Private Wealth",
+      "side": "Buy Side",
+      "coverage": "Foggia",
+      "contact": "Joe Aglione",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Evercore Inc",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "First Manhattan Corp",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "Art Tambaro",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Forza Investment Group",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Four Six Three Capital",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "Chris Pope",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Goldman Sachs Private Wealth",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Jain Global",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "JP Morgan Private Bank",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Lakewood Capital Management",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Loop Asset Management",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Morgan Stanley Private Wealth",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Newfleet Asset Management",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "Jerry Culmone",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Norges Bank",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "John Sullivan",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Oppenheimer Asset Management",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "RBC Wealth Management",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Rigel Cove LP",
+      "side": "Buy Side",
+      "coverage": "Foggia",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Safra Securities LLC",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "Joao Paulo Lemos",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Secor Mercer Investment Mgt",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Tower Research Capital",
+      "side": "Buy Side",
+      "coverage": "Foggia",
+      "contact": "",
+      "feedSlug": "towerresearchcapital",
+      "live": true
+    },
+    {
+      "firm": "United Nations Joint Pension",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "WR Berkley (Berkley Dean)",
+      "side": "Buy Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Bluefin Capital Mgt",
+      "side": "Buy Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Bloomberg",
+      "side": "Platform",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "TradeWeb",
+      "side": "Platform",
+      "coverage": "Steve",
+      "contact": "Jim Kenny Kids",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Market Axxess",
+      "side": "Platform",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "TruMid",
+      "side": "Platform",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "trumid",
+      "live": true
+    },
+    {
+      "firm": "BondPoint (ICE Bonds)",
+      "side": "Platform",
+      "coverage": "Steve",
+      "contact": "Brad Schoelle",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Bond Port",
+      "side": "Platform",
+      "coverage": "Foggia",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Academy Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Advisors Asset Mgt",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "AGP Alliance Global Partners",
+      "side": "Sell Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "American Veterens",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Ameriprise Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Jim Hogan",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Arbor Trading & Research",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Aurel (BGC)",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Adam Ferencz",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Banco Santander",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Mike Burke",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Bank of America Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Barclays Capital Inc",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "BBVA Secutiries",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Blackrock Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Blaylock Van LLC",
+      "side": "Sell Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "BMO Capital Markets",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "BNP Paribas",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Josh Harmon",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "BNY Mellon Capital Mkts",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Brean Capital",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Brownstone Investment Group",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Bull Market Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Keith Baelis",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Cabrera Capital",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Cambridge Coex",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Cantor Fitzgerald",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Castleoak Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "castleoaksecurities",
+      "live": true
+    },
+    {
+      "firm": "Charles Scwhab",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Alex Reale",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Citadel Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Matt Perez",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Citizens Financial Group",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Cohen & Company Sec.",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Credit Agricole CIB",
+      "side": "Sell Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Crews & Associates",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "DA Davidson",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Daiwa Capital Markets",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Deutsche Bank Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Dinosaur Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "E-Trade (Morgan Stanley Sub)",
+      "side": "Sell Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Falcon Square",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "FHN Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Fifth Third Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "First Ballantyne LLC",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Goldman Sachs & Co",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Hennion & Walsh",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "hennionwalsh",
+      "live": true
+    },
+    {
+      "firm": "Hilltop Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "HSBC",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Imperial Capital",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "ING Groep",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Insperex",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Rick Gillham",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "InterContinental Exchange(ICE)",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Brad Schoelle",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Jefferies LLC",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "JonesTrading LLC",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "JP Morgan Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Keybanc Capital Markets",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Loop Capital",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Marex Capital Markets",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Marex Outsourced Trading",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Ron Catena",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Mesirow Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Jason Handrinos",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Mitsubishi UFJ Financial",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Morgan Stanley",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "JR Gulka",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Natixis Capital Mkts",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Jason Caruso",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "NatWest Markets",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Nomura Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Gordon Sweely",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Oppenheimer & Co",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Pershing LLC",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Piper Sandler",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "PNC Bank",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "R. Seelaus & Co.",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Raymond James",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "RBC Capital Markets",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Robert W. Baird",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Roberts & Ryan",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Ed Reid",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Samuel Ramirez and Co",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "San Blas Securities",
+      "side": "Sell Side",
+      "coverage": "Matt",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Scotia Bank Capital Mkts",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Kara Fernandez",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Seibert Williams Shank & Co.",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Societe Generale",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Steve Papadam",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Standard Chartered Bank",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Stifel Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Lynn Giordano",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Stonex Financial",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Sumridge Partners LLC",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Susquehanna Intl Group",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "TD Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "ThinkEquity LLC",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Truist Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "UniCredit",
+      "side": "Sell Side",
+      "coverage": "",
+      "contact": "",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "US Bancorp Investments",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Len Bilancione",
+      "feedSlug": "",
+      "live": false
+    },
+    {
+      "firm": "Wells Fargo Securities",
+      "side": "Sell Side",
+      "coverage": "Steve",
+      "contact": "Scott Freeman",
+      "feedSlug": "",
+      "live": false
+    }
+  ],
+  "templates": [
+    {
+      "id": "info",
+      "label": "Informational chat",
+      "subject": "Quick question about {firm}'s {desk} desk",
+      "body": "Hi {first},\n\nI came across your move to {firm} and wanted to reach out. I'm focused on building a career in fixed income sales & trading here in New York, coming from {background}.\n\nI'd value 15 minutes to hear how you think about the desk and where you're seeing the most interesting flow right now. Happy to work entirely around your schedule.\n\nWould a short call in the next couple of weeks work?\n\nBest,\n{me}"
+    },
+    {
+      "id": "referral",
+      "label": "Ask for referral",
+      "subject": "{firm} {desk} \u2014 referral",
+      "body": "Hi {first},\n\nThanks again for taking the time to chat. Our conversation reinforced that {firm}'s desk is exactly the environment I'm aiming for.\n\nI noticed a relevant opening on the {desk} side \u2014 would you be comfortable referring me, or pointing me to the right person on the team? Happy to send whatever makes that easy on your end.\n\nAppreciate it either way.\n\nBest,\n{me}"
+    },
+    {
+      "id": "followup",
+      "label": "Follow-up nudge",
+      "subject": "Following up \u2014 {me}",
+      "body": "Hi {first},\n\nWanted to follow up on my note from last week. I know the desk keeps you busy, so no pressure \u2014 just flagging that I'm still very interested in connecting whenever the timing works.\n\nThanks,\n{me}"
+    },
+    {
+      "id": "coffee",
+      "label": "Coffee / in-person",
+      "subject": "Coffee near {firm}?",
+      "body": "Hi {first},\n\nI'm going to be around midtown over the next couple of weeks and would love to grab a quick coffee if you have 20 minutes. I'm working toward a fixed income S&T seat and would value your read on the market and the desk.\n\nAny morning that works for you?\n\nBest,\n{me}"
+    },
+    {
+      "id": "reconnect",
+      "label": "Reconnect (old contact)",
+      "subject": "Catching up",
+      "body": "Hi {first},\n\nIt's been a while \u2014 hope things are going well at {firm}. I've been focused on moving into fixed income sales & trading and thought of you given your seat on the {desk} side.\n\nWould love to catch up briefly if you're open to it. No agenda beyond hearing how you're seeing things.\n\nBest,\n{me}"
+    },
+    {
+      "id": "postapp",
+      "label": "After applying",
+      "subject": "Application \u2014 {firm} {desk}",
+      "body": "Hi {first},\n\nI recently applied for a role on the {desk} desk at {firm} and wanted to reach out directly. I'd be grateful for any insight into the team or the process \u2014 and if it's appropriate, I'd welcome the chance to put a name to the application.\n\nThanks for considering it.\n\nBest,\n{me}"
+    },
+    {
+      "id": "thankyou",
+      "label": "Thank-you (post-meeting)",
+      "subject": "Thank you",
+      "body": "Hi {first},\n\nThank you for the time today \u2014 it was genuinely helpful. Your point about {desk} flow gave me a lot to think about, and it reinforced why I'm targeting this space.\n\nI'll keep you posted on how things progress, and please don't hesitate if there's ever anything I can do in return.\n\nBest,\n{me}"
+    },
+    {
+      "id": "intro",
+      "label": "Cold intro (mutual contact)",
+      "subject": "Intro via {via}",
+      "body": "Hi {first},\n\n{via} suggested I reach out. I'm working toward a fixed income S&T role in New York and {via} thought your perspective from the {desk} side at {firm} would be valuable.\n\nWould you have 15 minutes in the coming weeks? Happy to work around your calendar.\n\nBest,\n{me}"
+    }
+  ],
+  "profile": {
+    "name": "",
+    "background": "a background in fixed income markets"
+  }
+}
