@@ -1,15 +1,12 @@
 {
   "name": "desk-track-backend",
-  "version": "2.0.0",
-  "description": "DESK/TRACK backend — syncs contacts, targets, templates across devices and proxies job feeds.",
+  "version": "2.1.0",
+  "description": "DESK/TRACK backend — syncs contacts, targets, templates across devices and proxies job feeds. Zero dependencies.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
-    "node": ">=18"
-  },
-  "dependencies": {
-    "better-sqlite3": "^11.0.0"
+    "node": "22.x"
   }
 }

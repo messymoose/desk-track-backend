@@ -2,8 +2,8 @@ services:
   - type: web
     name: desk-track-backend
     runtime: node
-    plan: free
-    buildCommand: npm install
+    plan: starter
+    buildCommand: ""
     startCommand: node server.js
     healthCheckPath: /health
     disk:
@@ -13,5 +13,5 @@ services:
     envVars:
       - key: PASSPHRASE
         sync: false
-      - key: DB_PATH
-        value: /data/data.db
+      - key: DATA_DIR
+        value: /data
