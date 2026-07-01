@@ -14,7 +14,7 @@ const path = require("path");
 const crypto = require("crypto");
 
 const PORT = process.env.PORT || 8788;
-const PASSPHRASE = process.env.PASSPHRASE || "changeme";
+const PASSPHRASE = (process.env.PASSPHRASE || "changeme").trim();
 const DATA_DIR = process.env.DATA_DIR || __dirname;
 const DATA_FILE = path.join(DATA_DIR, "data.json");
 const SEED_FILE = path.join(__dirname, "seed.json");
@@ -62,15 +62,36 @@ function authed(req) {
 }
 
 // ---- job feed proxy ----
-const ALLOW_HOSTS = new Set(["boards-api.greenhouse.io", "api.lever.co"]);
-function fetchUpstream(target) {
+const ALLOW_HOSTS = new Set(["boards-api.greenhouse.io", "api.lever.co", "api.adzuna.com"]);
+function hostAllowed(hostname) {
+  if (ALLOW_HOSTS.has(hostname)) return true;
+  // Workday tenants: <tenant>.<dc>.myworkdayjobs.com
+  if (/\.myworkdayjobs\.com$/.test(hostname)) return true;
+  return false;
+}
+function fetchUpstream(target, method, postBody) {
   return new Promise((resolve, reject) => {
     let u;
     try { u = new URL(target); } catch { return reject(new Error("bad url")); }
-    if (!ALLOW_HOSTS.has(u.hostname)) return reject(new Error("host not allowed"));
-    https.get(u, { timeout: 15000, headers: { "User-Agent": "desk-track" } }, (res) => {
+    if (!hostAllowed(u.hostname)) return reject(new Error("host not allowed"));
+    const isPost = method === "POST";
+    const payload = isPost ? Buffer.from(JSON.stringify(postBody || {})) : null;
+    const opts = {
+      method: isPost ? "POST" : "GET",
+      timeout: 15000,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (desk-track)",
+        "Accept": "application/json",
+        ...(isPost ? { "Content-Type": "application/json", "Content-Length": payload.length } : {}),
+      },
+    };
+    const r = https.request(u, opts, (res) => {
       let d = ""; res.on("data", (c) => (d += c)); res.on("end", () => resolve({ status: res.statusCode, body: d }));
-    }).on("error", reject).on("timeout", function () { this.destroy(); reject(new Error("timeout")); });
+    });
+    r.on("error", reject);
+    r.on("timeout", function () { this.destroy(); reject(new Error("timeout")); });
+    if (payload) r.write(payload);
+    r.end();
   });
 }
 
@@ -99,8 +120,15 @@ const server = http.createServer(async (req, res) => {
   if (p === "/fetch") {
     const target = url.searchParams.get("url");
     if (!target) return send(res, 400, { error: "missing url" });
-    try { const up = await fetchUpstream(target); return send(res, up.status, up.body); }
-    catch (e) { return send(res, 502, { error: String(e.message || e) }); }
+    try {
+      if (req.method === "POST") {
+        const body = await readBody(req);
+        const up = await fetchUpstream(target, "POST", body);
+        return send(res, up.status, up.body);
+      }
+      const up = await fetchUpstream(target, "GET");
+      return send(res, up.status, up.body);
+    } catch (e) { return send(res, 502, { error: String(e.message || e) }); }
   }
 
   if (!authed(req)) return send(res, 401, { error: "unauthorized" });
