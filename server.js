@@ -50,6 +50,38 @@ function persist() {
   }
 }
 
+// ---- automatic backups (write-triggered, on the persistent disk) ----
+const BACKUP_DIR = path.join(DATA_DIR, "backups");
+const KEEP = { write: 30, daily: 14, prerestore: 5 };
+let lastDailyStamp = "";
+function snapshot(kind) {
+  try {
+    if (!fs.existsSync(DATA_FILE)) return;
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 23);
+    const count = (store.contacts || []).length;
+    fs.copyFileSync(DATA_FILE, path.join(BACKUP_DIR, `${kind}_${ts}_c${count}.json`));
+    prune();
+  } catch (e) { console.error("snapshot failed:", e.message); }
+}
+function prune() {
+  try {
+    const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith(".json"));
+    for (const kind of Object.keys(KEEP)) {
+      const group = files.filter(f => f.startsWith(kind + "_")).sort();
+      for (const f of group.slice(0, Math.max(0, group.length - KEEP[kind]))) {
+        fs.unlinkSync(path.join(BACKUP_DIR, f));
+      }
+    }
+  } catch (e) { console.error("prune failed:", e.message); }
+}
+function beforeWriteBackups() {
+  const day = new Date().toISOString().slice(0, 10);
+  if (day !== lastDailyStamp) { snapshot("daily"); lastDailyStamp = day; }
+  snapshot("write");
+}
+const BACKUP_NAME_RE = /^(write|daily|prerestore)_[\dT-]+_c\d+\.json$/;
+
 // ---- auth ----
 function authed(req) {
   const h = req.headers["authorization"] || "";
@@ -140,9 +172,40 @@ const server = http.createServer(async (req, res) => {
     if (!KEYS.includes(key)) return send(res, 400, { error: "unknown key" });
     const body = await readBody(req);
     if (!("value" in body)) return send(res, 400, { error: "missing value" });
+    beforeWriteBackups();   // snapshot the state BEFORE this change
     store[key] = body.value;
     persist();
     return send(res, 200, { ok: true, key });
+  }
+
+  if (p === "/api/backups" && req.method === "GET") {
+    try {
+      fs.mkdirSync(BACKUP_DIR, { recursive: true });
+      const list = fs.readdirSync(BACKUP_DIR)
+        .filter(f => BACKUP_NAME_RE.test(f))
+        .map(f => {
+          const st = fs.statSync(path.join(BACKUP_DIR, f));
+          const m = f.match(/_c(\d+)\.json$/);
+          return { file: f, kind: f.split("_")[0], at: st.mtimeMs, contacts: m ? Number(m[1]) : null };
+        })
+        .sort((a, b) => b.at - a.at);
+      return send(res, 200, { backups: list });
+    } catch (e) { return send(res, 500, { error: String(e.message || e) }); }
+  }
+
+  if (p === "/api/backups/restore" && req.method === "POST") {
+    const body = await readBody(req);
+    const file = String(body.file || "");
+    if (!BACKUP_NAME_RE.test(file)) return send(res, 400, { error: "bad backup name" });
+    const src = path.join(BACKUP_DIR, file);
+    if (!fs.existsSync(src)) return send(res, 404, { error: "backup not found" });
+    try {
+      snapshot("prerestore");            // make the restore itself undoable
+      fs.copyFileSync(src, DATA_FILE);
+      loadStore();
+      console.log(`Restored ${file} (${(store.contacts || []).length} contacts)`);
+      return send(res, 200, { ok: true, restored: file, contacts: (store.contacts || []).length });
+    } catch (e) { return send(res, 500, { error: String(e.message || e) }); }
   }
 
   send(res, 404, { error: "not found" });
