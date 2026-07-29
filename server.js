@@ -16,7 +16,7 @@ const PASSPHRASE = (process.env.PASSPHRASE || "changeme").trim();
 const DATA_DIR = (process.env.DATA_DIR || __dirname).trim();
 const DATA_FILE = path.join(DATA_DIR, "data.json");
 const SEED_FILE = path.join(__dirname, "seed.json");
-const KEYS = ["contacts", "targets", "templates", "profile", "saved"];
+const KEYS = ["contacts", "targets", "templates", "profile", "saved", "resume", "letters"];
 
 // ---- storage ----
 let store = {};
@@ -81,6 +81,17 @@ function beforeWriteBackups() {
   snapshot("write");
 }
 const BACKUP_NAME_RE = /^(write|daily|prerestore)_[\dT-]+_c\d+\.json$/;
+
+// ---- Anthropic API config ----
+// Key precedence: Render env var (most secure) -> key saved from the app UI.
+const ANTHROPIC_BASE = (process.env.ANTHROPIC_BASE || "https://api.anthropic.com").replace(/\/$/, "");
+const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5";
+function anthropicKey() {
+  const fromEnv = (process.env.ANTHROPIC_API_KEY || "").trim();
+  if (fromEnv) return fromEnv;
+  const fromStore = store.profile && store.profile.anthropicKey;
+  return (fromStore || "").trim() || null;
+}
 
 // ---- auth ----
 function authed(req) {
@@ -206,6 +217,56 @@ const server = http.createServer(async (req, res) => {
       console.log(`Restored ${file} (${(store.contacts || []).length} contacts)`);
       return send(res, 200, { ok: true, restored: file, contacts: (store.contacts || []).length });
     } catch (e) { return send(res, 500, { error: String(e.message || e) }); }
+  }
+
+  // ---- Claude (Anthropic API) proxy: key never leaves the server ----
+  if (p === "/api/ai/key" && req.method === "GET") {
+    return send(res, 200, { configured: !!anthropicKey(), source: process.env.ANTHROPIC_API_KEY ? "env" : (store.profile && store.profile.anthropicKey ? "app" : null) });
+  }
+
+  if (p === "/api/ai/models" && req.method === "GET") {
+    const key = anthropicKey();
+    if (!key) return send(res, 400, { error: "No Anthropic API key set. Add one in the app under Letters → Setup." });
+    try {
+      const r = await fetch(ANTHROPIC_BASE + "/v1/models?limit=40", {
+        headers: { "x-api-key": key, "anthropic-version": "2023-06-01" },
+      });
+      const j = await r.json();
+      if (!r.ok) return send(res, r.status, { error: (j.error && j.error.message) || "model list failed" });
+      return send(res, 200, { models: (j.data || []).map((m) => ({ id: m.id, name: m.display_name || m.id })) });
+    } catch (e) { return send(res, 502, { error: String(e.message || e) }); }
+  }
+
+  if (p === "/api/ai/generate" && req.method === "POST") {
+    const key = anthropicKey();
+    if (!key) return send(res, 400, { error: "No Anthropic API key set. Add one in the app under Letters → Setup." });
+    const body = await readBody(req);
+    const content = Array.isArray(body.content) ? body.content : null;
+    if (!content || !content.length) return send(res, 400, { error: "missing content" });
+    const payload = {
+      model: body.model || DEFAULT_MODEL,
+      max_tokens: Math.min(Number(body.max_tokens) || 2000, 8000),
+      messages: [{ role: "user", content }],
+    };
+    if (body.system) payload.system = String(body.system);
+    try {
+      const r = await fetch(ANTHROPIC_BASE + "/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": key,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+      const j = await r.json();
+      if (!r.ok) {
+        const msg = (j.error && j.error.message) || `Anthropic error ${r.status}`;
+        return send(res, r.status, { error: msg });
+      }
+      const text = (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim();
+      return send(res, 200, { text, model: j.model, usage: j.usage || null });
+    } catch (e) { return send(res, 502, { error: String(e.message || e) }); }
   }
 
   send(res, 404, { error: "not found" });
