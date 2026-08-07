@@ -346,6 +346,8 @@ async function kalshi(method, path, {query="", body=null, auth=false}={}){
   if(HOSTED) opts.headers["x-kalshi-pass"] = PASS;
   if(body){ opts.body = JSON.stringify(body); opts.headers["Content-Type"]="application/json"; }
   const r = await fetch(url, opts);
+  if(r.status===401 && r.headers.get("X-Desk-Gate")==="1")
+    throw new Error("Your DESK passphrase was rejected by your own server (not Kalshi). Reload the page and unlock again.");
   const txt = await r.text();
   let j; try{ j = JSON.parse(txt); }catch{ j = {raw:txt}; }
   if(!r.ok){
@@ -421,9 +423,17 @@ async function linkAccount(){
     loadPortfolio();
   }catch(err){
     S.linked=false;
-    status("Link failed — "+err.message+(String(err.message).includes("Failed to fetch")
-      ? " (likely a CORS block from the browser; if so, the trade endpoints need a small local proxy — I can generate one)"
-      : " (check env, key ID, and that the PEM is the full unedited file)"));
+    const m=String(err.message);
+    let hint="";
+    if(m.includes("Failed to fetch")) hint=" — network/CORS issue reaching the server.";
+    else if(m.includes("401")||m.toLowerCase().includes("unauthor")||m.includes("403")){
+      hint = ` — Kalshi rejected this key for the ${ENVS[S.env].label} environment. `+
+        (S.env==="demo"
+          ? "Demo keys must be generated while logged into demo.kalshi.co, NOT kalshi.com. A production key will always fail here."
+          : "Production keys must come from kalshi.com. A demo key will always fail here.")+
+        " Keys are not interchangeable between the two.";
+    }
+    status("Link failed — "+m+hint);
   }finally{ $("linkBtn").disabled=false; }
 }
 

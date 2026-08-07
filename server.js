@@ -25,6 +25,10 @@ const KALSHI_BASES = {
   prod: "https://external-api.kalshi.com",
 };
 const KALSHI_HTML = path.join(__dirname, "kalshi.html");
+function kalshiDeny(res) {
+  res.writeHead(401, { "Content-Type": "application/json", "X-Desk-Gate": "1" });
+  res.end(JSON.stringify({ error: { message: "desk passphrase rejected" } }));
+}
 function kalshiAuthed(req) {
   const a = Buffer.from(String(req.headers["x-kalshi-pass"] || ""));
   const b = Buffer.from(KALSHI_PASS);
@@ -159,6 +163,7 @@ function readBody(req) {
 
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Expose-Headers", "X-Desk-Gate");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Kalshi-Pass, Kalshi-Access-Key, Kalshi-Access-Timestamp, Kalshi-Access-Signature");
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
@@ -184,15 +189,13 @@ const server = http.createServer(async (req, res) => {
 
   // Lock-screen unlock check
   if (p === "/kalshi-auth-check") {
-    return kalshiAuthed(req)
-      ? send(res, 200, { ok: true })
-      : send(res, 401, { error: { message: "unauthorized" } });
+    return kalshiAuthed(req) ? send(res, 200, { ok: true }) : kalshiDeny(res);
   }
 
   // Encrypted saved credentials (ciphertext only — encrypted/decrypted in the
   // browser with the desk passphrase; this server never sees the private key).
   if (p === "/kalshi-cred") {
-    if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
+    if (!kalshiAuthed(req)) return kalshiDeny(res);
     const CRED_FILE = path.join(DATA_DIR, "kalshi-cred.json");
     if (req.method === "GET") {
       try { return send(res, 200, JSON.parse(fs.readFileSync(CRED_FILE, "utf8"))); }
@@ -213,7 +216,7 @@ const server = http.createServer(async (req, res) => {
 
   // ES futures + prior SPX close for the gap panel (Yahoo Finance, no key needed)
   if (p === "/kalshi-futures" && req.method === "GET") {
-    if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
+    if (!kalshiAuthed(req)) return kalshiDeny(res);
     try {
       const yh = async (sym) => {
         const r = await fetch(
@@ -241,7 +244,7 @@ const server = http.createServer(async (req, res) => {
   // private key never touches this server — only single-use signed headers.
   const km = p.match(/^\/kalshi-api\/(demo|prod)(\/.*)$/);
   if (km) {
-    if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
+    if (!kalshiAuthed(req)) return kalshiDeny(res);
     try {
       const target = KALSHI_BASES[km[1]] + km[2] + (url.search || "");
       const headers = { "Content-Type": "application/json" };
