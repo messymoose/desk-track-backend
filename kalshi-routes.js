@@ -12,7 +12,20 @@ const KALSHI_BASES = {
   prod: "https://external-api.kalshi.com",
 };
 
-function mountKalshi(app) {
+function mountKalshi(app, opts = {}) {
+  const PASS = opts.passphrase || "deskpass";
+
+  // Passphrase gate for all Kalshi data/proxy routes (page itself stays
+  // public — it's an empty shell that shows a lock screen until unlocked).
+  const gate = (req, res, next) => {
+    if (req.headers["x-kalshi-pass"] !== PASS)
+      return res.status(401).json({ error: { message: "unauthorized" } });
+    next();
+  };
+
+  // Unlock check used by the page's lock screen
+  app.get("/kalshi-auth-check", gate, (_req, res) => res.json({ ok: true }));
+
   // 1) Serve the app itself at /kalshi
   //    (put kalshi.html next to server.js, same folder as index.html)
   app.get("/kalshi", (_req, res) => {
@@ -28,7 +41,7 @@ function mountKalshi(app) {
   //    NOTE: this server never sees your private key — only the
   //    already-signed headers, which are valid for one request path
   //    at one timestamp.
-  app.all(/^\/kalshi-api\/(demo|prod)\/(.*)/, async (req, res) => {
+  app.all(/^\/kalshi-api\/(demo|prod)\/(.*)/, gate, async (req, res) => {
     try {
       const env = req.params[0];
       const upstreamPath = "/" + req.params[1]; // e.g. /trade-api/v2/portfolio/balance
@@ -55,7 +68,7 @@ function mountKalshi(app) {
 
   // 3) ES futures + prior SPX close for the gap panel (no key needed).
   //    Yahoo Finance chart endpoint: ES=F (front-month e-mini) and ^GSPC.
-  app.get("/kalshi-futures", async (_req, res) => {
+  app.get("/kalshi-futures", gate, async (_req, res) => {
     try {
       const yh = async (sym) => {
         const r = await fetch(

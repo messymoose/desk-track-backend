@@ -218,6 +218,19 @@ footer{margin-top:30px;font-size:12px;color:#5B6478;line-height:1.6;font-family:
 </footer>
 </div>
 
+<!-- LOCK SCREEN (self-hosted only) -->
+<div class="modalBg" id="lockBg" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3>DESK/TRACK · Kalshi Desk</h3>
+    <label for="lockPass">Passphrase</label>
+    <input id="lockPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')unlock()">
+    <div class="acts" style="margin-top:16px">
+      <button class="btn" onclick="unlock()">Unlock</button>
+    </div>
+    <div id="lockErr" class="mono" style="font-size:12px;color:var(--down);margin-top:10px;min-height:14px"></div>
+  </div>
+</div>
+
 <!-- CONFIRM MODAL -->
 <div class="modalBg" id="modalBg" role="dialog" aria-modal="true">
   <div class="modal">
@@ -294,6 +307,7 @@ async function signHeaders(method, path){
   };
 }
 let HOSTED = false; // true when served from the DESK/TRACK server (uses same-origin proxy, no CORS)
+let PASS = "";      // desk passphrase, held in memory for this session only
 async function kalshi(method, path, {query="", body=null, auth=false}={}){
   const url = (HOSTED ? "/kalshi-api/"+S.env : ENVS[S.env].base) + path + (query?("?"+query):"");
   const opts = {method, headers:{}};
@@ -301,6 +315,7 @@ async function kalshi(method, path, {query="", body=null, auth=false}={}){
     if(!S.linked) throw new Error("Link your account first.");
     opts.headers = await signHeaders(method, path);
   }
+  if(HOSTED) opts.headers["x-kalshi-pass"] = PASS;
   if(body){ opts.body = JSON.stringify(body); opts.headers["Content-Type"]="application/json"; }
   const r = await fetch(url, opts);
   const txt = await r.text();
@@ -511,7 +526,7 @@ async function runResearch(){
   status("Researching ES futures and prior SPX close…", true);
   if(HOSTED){
     try{
-      const r = await fetch("/kalshi-futures");
+      const r = await fetch("/kalshi-futures",{headers:{"x-kalshi-pass":PASS}});
       const j = await r.json();
       if(j.error) throw new Error(j.error.message);
       S.esFut=j.esFuture; S.priorClose=j.spxPriorClose;
@@ -564,12 +579,26 @@ function renderGap(){
       : `Futures imply a <b>gap-down open near ${fmt(S.impliedLevel)}</b> (${g.toFixed(1)} pts). Strikes above the line need an intraday rally — cheap Yes there is cheap for a reason.`;
   }
 }
+async function unlock(){
+  const p = $("lockPass").value;
+  try{
+    const r = await fetch("/kalshi-auth-check",{headers:{"x-kalshi-pass":p}});
+    if(!r.ok) throw 0;
+    PASS = p;
+    $("lockBg").classList.remove("open");
+    status("Unlocked — proxy mode on (no CORS issues).");
+  }catch(_){ $("lockErr").textContent = "Wrong passphrase."; }
+}
 setEnv("demo");
 // Detect self-hosted mode: if the DESK/TRACK server's futures route answers, use same-origin proxying everywhere.
 (async()=>{
   try{
-    const r = await fetch("/kalshi-futures",{method:"GET"});
-    if(r.ok || r.status===502){ HOSTED = true; status("Running on DESK/TRACK server — proxy mode on (no CORS issues)."); }
+    const r = await fetch("/kalshi-auth-check");
+    if(r.status===401 || r.ok){
+      HOSTED = true;
+      if(r.ok){ PASS=""; status("Running on DESK/TRACK server — proxy mode on."); }
+      else { $("lockBg").classList.add("open"); setTimeout(()=>$("lockPass").focus(),50); }
+    }
   }catch(_){/* artifact / direct mode */}
 })();
 </script>
