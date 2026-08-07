@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Open Desk — Kalshi S&P Daily Markets</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0F1522; --panel:#161D2E; --panel2:#1C2438; --line:#273148;
+  --text:#E9EDF5; --muted:#8B96AB; --amber:#F2B24C; --up:#35C482; --down:#E55460;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+body{background:var(--ink);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;min-height:100vh}
+.mono{font-family:'IBM Plex Mono',monospace}
+.wrap{max-width:1120px;margin:0 auto;padding:28px 20px 80px}
+
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber)}
+h1{font-size:clamp(26px,4vw,38px);font-weight:700;letter-spacing:-.02em;line-height:1.05;margin-top:6px}
+h1 span{color:var(--muted);font-weight:400}
+.btn{background:var(--amber);color:#161200;border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;padding:12px 20px;cursor:pointer;transition:transform .12s,filter .12s}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn[disabled]{opacity:.5;cursor:wait;transform:none}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+.btn.buy{background:var(--up);color:#04180D}
+.btn.sell{background:var(--down);color:#1D0507}
+.btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.grid{display:grid;grid-template-columns:360px 1fr;gap:18px;margin-top:18px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:18px}
+.card h2{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+
+.gapRow{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px dashed var(--line)}
+.gapRow:last-child{border-bottom:none}
+.gapRow .lbl{color:var(--muted);font-size:13px}
+.gapRow .val{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600}
+.val.up{color:var(--up)} .val.down{color:var(--down)} .val.amber{color:var(--amber)}
+.readout{margin-top:12px;padding:12px 14px;background:var(--panel2);border-radius:10px;font-size:13px;line-height:1.55;color:var(--muted)}
+.readout b{color:var(--text)}
+
+/* ladder */
+.hdrRow{display:grid;grid-template-columns:minmax(120px,1.2fr) 1fr 72px 72px 60px;gap:10px;padding:0 12px 8px;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.hdrRow div:nth-child(n+3){text-align:right}
+.rung{display:grid;grid-template-columns:minmax(120px,1.2fr) 1fr 72px 72px 60px;gap:10px;align-items:center;padding:10px 12px;border-radius:10px;margin-bottom:6px;background:var(--panel2);border:1px solid transparent;cursor:pointer;transition:border-color .15s}
+.rung:hover,.rung.sel{border-color:var(--amber)}
+.rung .strike{font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;line-height:1.3}
+.rung .strike small{display:block;font-size:10px;color:var(--muted);font-weight:400}
+.rung .bar{height:8px;border-radius:99px;background:#0B101C;position:relative;overflow:hidden}
+.rung .bar i{position:absolute;inset:0 auto 0 0;border-radius:99px;background:linear-gradient(90deg,var(--up),#7FE3B4);transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.rung .px{font-family:'IBM Plex Mono',monospace;font-size:13px;text-align:right}
+.rung .px small{display:block;font-size:9px;color:var(--muted);letter-spacing:.08em;text-transform:uppercase}
+.rung.above{box-shadow:inset 3px 0 0 var(--up)} .rung.below{box-shadow:inset 3px 0 0 var(--down)}
+.futLine{display:flex;align-items:center;gap:10px;margin:10px 0}
+.futLine .rule{flex:1;border-top:2px dashed var(--amber);opacity:.85}
+.futLine .tag{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--amber);background:rgba(242,178,76,.1);padding:4px 10px;border-radius:99px;white-space:nowrap}
+.edge{font-family:'IBM Plex Mono',monospace;font-size:10px;text-align:right}
+.edge.pos{color:var(--up)} .edge.neg{color:var(--down)} .edge.na{color:#4A5468}
+
+/* forms */
+input,select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);font-family:'IBM Plex Mono',monospace;font-size:13px;padding:10px;width:100%}
+textarea{min-height:96px;resize:vertical;font-size:11px}
+input::placeholder,textarea::placeholder{color:#5B6478}
+label{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:10px 0 5px;font-family:'IBM Plex Mono',monospace}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.envSwitch{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.envSwitch button{flex:1;background:transparent;border:none;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:12px;padding:9px;cursor:pointer}
+.envSwitch button.on{background:var(--panel2);color:var(--text);font-weight:600}
+.envSwitch button.on.demo{color:var(--up)} .envSwitch button.on.prod{color:var(--down)}
+.linkState{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted)}
+.dot{width:8px;height:8px;border-radius:50%;background:#4A5468}
+.dot.on{background:var(--up);box-shadow:0 0 8px var(--up)}
+.warn{margin-top:12px;padding:11px 13px;border:1px solid rgba(229,84,96,.4);background:rgba(229,84,96,.07);border-radius:10px;font-size:12px;line-height:1.55;color:var(--muted)}
+.warn b{color:var(--down)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);text-align:left;padding:0 8px 10px;font-weight:500}
+td{padding:9px 8px;border-top:1px solid var(--line);font-family:'IBM Plex Mono',monospace;font-size:12px}
+td.r,th.r{text-align:right}
+.pill{display:inline-block;padding:2px 9px;border-radius:99px;font-size:11px;font-weight:600}
+.pill.yes{background:rgba(53,196,130,.15);color:var(--up)}
+.pill.no{background:rgba(229,84,96,.15);color:var(--down)}
+.empty{color:var(--muted);font-size:12px;padding:12px 4px;font-family:'IBM Plex Mono',monospace}
+
+/* modal */
+.modalBg{position:fixed;inset:0;background:rgba(8,11,18,.75);display:none;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modalBg.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;max-width:420px;width:100%}
+.modal h3{font-size:17px;margin-bottom:14px}
+.modal .sum{font-family:'IBM Plex Mono',monospace;font-size:13px;line-height:1.9;background:var(--panel2);border-radius:10px;padding:14px;margin-bottom:16px}
+.modal .sum b{color:var(--amber)}
+.modal .acts{display:flex;gap:10px;justify-content:flex-end}
+
+#status{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);min-height:18px;margin-top:6px;word-break:break-word}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid var(--amber);border-top-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{margin-top:30px;font-size:12px;color:#5B6478;line-height:1.6;font-family:'IBM Plex Mono',monospace}
+.tickerTag{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--amber);letter-spacing:.04em;text-transform:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <div class="eyebrow">Kalshi Trade API v2 · live</div>
+    <h1>Open Desk <span>/ futures vs. the strike ladder</span></h1>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <button class="btn ghost" onclick="runResearch()" id="researchBtn">Research futures gap</button>
+    <button class="btn" onclick="loadMarkets()" id="loadBtn">Load live Kalshi markets</button>
+  </div>
+</header>
+<div id="status"></div>
+
+<div class="grid">
+  <!-- LEFT COLUMN -->
+  <div>
+    <!-- ACCOUNT -->
+    <div class="card">
+      <h2>Account <span class="linkState"><span class="dot" id="linkDot"></span><span id="linkTxt">Not linked</span></span></h2>
+      <div class="envSwitch" role="group" aria-label="Environment">
+        <button id="envDemo" class="on demo" onclick="setEnv('demo')">DEMO (fake money)</button>
+        <button id="envProd" class="prod" onclick="setEnv('prod')">PRODUCTION</button>
+      </div>
+      <label for="keyId">API key ID</label>
+      <input id="keyId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off">
+      <label for="pem">RSA private key (PEM)</label>
+      <textarea id="pem" placeholder="-----BEGIN RSA PRIVATE KEY----- … or -----BEGIN PRIVATE KEY----- …" autocomplete="off" spellcheck="false"></textarea>
+      <div style="display:flex;gap:10px;margin-top:12px;align-items:center;flex-wrap:wrap">
+        <button class="btn" onclick="linkAccount()" id="linkBtn">Link account</button>
+        <span class="mono" style="font-size:13px" id="balTxt"></span>
+      </div>
+      <div class="warn">
+        <b>Handle with care.</b> Your key is held in this page's memory only — never stored, never sent anywhere except directly to Kalshi's API over HTTPS, and gone on refresh. Still, treat any pasted private key as sensitive: use a key you can revoke, start in <b>Demo</b>, and only switch to Production once you've verified behavior. Orders placed here are real and binding in Production.
+      </div>
+    </div>
+
+    <!-- GAP -->
+    <div class="card">
+      <h2>Open conditions — futures vs. cash</h2>
+      <div class="gapRow"><span class="lbl">S&amp;P 500 prior close</span><span class="val" id="priorClose">—</span></div>
+      <div class="gapRow"><span class="lbl">ES front-month future</span><span class="val amber" id="esFut">—</span></div>
+      <div class="gapRow"><span class="lbl">Fair-value implied open</span><span class="val" id="implOpen">—</span></div>
+      <div class="gapRow"><span class="lbl">Overnight gap</span><span class="val" id="gapPts">—</span></div>
+      <div class="gapRow"><span class="lbl">Gap %</span><span class="val" id="gapPct">—</span></div>
+      <div class="readout" id="gapRead">Run "Research futures gap" to pull ES futures and prior close, then compare against the live ladder. You can also type a level manually below.</div>
+      <label for="manualLvl">Manual futures-implied level (optional)</label>
+      <div class="row2">
+        <input id="manualLvl" type="number" step="0.25" placeholder="e.g. 7728.50">
+        <button class="btn ghost" onclick="applyManualLevel()">Apply to ladder</button>
+      </div>
+    </div>
+
+    <!-- TICKET -->
+    <div class="card">
+      <h2>Order ticket <span class="tickerTag" id="tkTicker">no market selected</span></h2>
+      <div class="row2">
+        <div><label>Action</label>
+          <select id="oAction"><option value="buy">Buy</option><option value="sell">Sell</option></select></div>
+        <div><label>Side</label>
+          <select id="oSide"><option value="yes">Yes</option><option value="no">No</option></select></div>
+      </div>
+      <div class="row2">
+        <div><label>Contracts</label><input id="oCount" type="number" min="1" placeholder="10"></div>
+        <div><label>Limit price ¢</label><input id="oPrice" type="number" min="1" max="99" placeholder="e.g. 45"></div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn buy" style="flex:1" onclick="openConfirm()">Review order</button>
+      </div>
+      <div class="readout" style="margin-top:12px" id="tkCost">Select a strike from the ladder, set price and size, then review. Limit orders only — this desk never sends market orders.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div>
+    <!-- MARKET PICKER + LADDER -->
+    <div class="card">
+      <h2>Strike ladder — live from Kalshi</h2>
+      <div class="row3" style="margin-bottom:12px">
+        <div style="grid-column:span 2"><label for="seriesTicker">Series ticker</label>
+          <input id="seriesTicker" value="KXINXU" placeholder="e.g. KXINXU / KXINX / KXINXD"></div>
+        <div><label>&nbsp;</label><button class="btn ghost" style="width:100%" onclick="discoverSeries()">Find S&amp;P series</button></div>
+      </div>
+      <div id="seriesResults"></div>
+      <div id="eventPickWrap" style="display:none;margin-bottom:12px">
+        <label for="eventPick">Event</label>
+        <select id="eventPick" onchange="renderLadder()"></select>
+      </div>
+      <div class="hdrRow"><div>Market</div><div>Implied prob (Yes ask)</div><div>Yes</div><div>No</div><div>Edge</div></div>
+      <div id="ladder"><div class="empty">Press "Load live Kalshi markets" to pull today's open markets straight from the exchange (public endpoint — no login needed). Click any rung to load it into the order ticket.</div></div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="card">
+      <h2>Portfolio <button class="btn ghost" style="padding:7px 14px;font-size:12px" onclick="loadPortfolio()">Refresh</button></h2>
+      <table>
+        <thead><tr><th>Ticker</th><th class="r">Position</th><th class="r">Exposure ¢</th><th class="r">Realized ¢</th></tr></thead>
+        <tbody id="posBody"><tr><td colspan="4" class="empty" style="border:none">Link your account to see live positions, or trade from the ticket and refresh.</td></tr></tbody>
+      </table>
+      <h2 style="margin-top:20px">Resting orders</h2>
+      <table>
+        <thead><tr><th>Ticker</th><th>Side</th><th class="r">Px ¢</th><th class="r">Qty</th><th class="r"></th></tr></thead>
+        <tbody id="ordBody"><tr><td colspan="5" class="empty" style="border:none">No resting orders loaded.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<footer>
+  Market data via Kalshi's public Trade API; orders via your own authenticated Kalshi API key, signed locally in your browser (RSA-PSS SHA-256). Demo base: external-api.demo.kalshi.co · Production base: external-api.kalshi.com. This is a research and execution tool, not financial advice — every order is your decision, and event contracts can go to zero.
+</footer>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modalBg" id="modalBg" role="dialog" aria-modal="true">
+  <div class="modal">
+    <h3>Confirm order</h3>
+    <div class="sum" id="modalSum"></div>
+    <div class="acts">
+      <button class="btn ghost" onclick="closeConfirm()">Cancel</button>
+      <button class="btn" id="sendBtn" onclick="sendOrder()">Send to Kalshi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= state ================= */
+const ENVS = {
+  demo:{base:"https://external-api.demo.kalshi.co", label:"DEMO"},
+  prod:{base:"https://external-api.kalshi.com", label:"PRODUCTION"}
+};
+let S = {
+  env:"demo", keyId:"", cryptoKey:null, linked:false,
+  markets:[], events:{},          // events: eventTicker -> [markets]
+  selTicker:null, selTitle:null,
+  impliedLevel:null, priorClose:null, esFut:null
+};
+const $ = id => document.getElementById(id);
+const status = (msg, spin) => { $("status").innerHTML = (spin?'<span class="spin"></span>':'')+msg; };
+const fmt = n => n==null?"—":Number(n).toLocaleString("en-US",{maximumFractionDigits:2});
+
+function setEnv(e){
+  S.env = e; S.linked=false; S.cryptoKey=null;
+  $("envDemo").classList.toggle("on", e==="demo");
+  $("envProd").classList.toggle("on", e==="prod");
+  $("linkDot").classList.remove("on"); $("linkTxt").textContent="Not linked"; $("balTxt").textContent="";
+  status(e==="prod" ? "⚠ Production selected — orders will use real money." : "Demo selected — fake money environment.");
+}
+
+/* ================= RSA-PSS signing (WebCrypto) ================= */
+function pemToDer(pem){
+  const b64 = pem.replace(/-----[^-]+-----/g,"").replace(/\s+/g,"");
+  const bin = atob(b64), buf = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) buf[i]=bin.charCodeAt(i);
+  return buf;
+}
+/* DER length encoder */
+function derLen(n){
+  if(n<128) return [n];
+  const bytes=[]; while(n>0){bytes.unshift(n&0xff); n>>=8;}
+  return [0x80|bytes.length, ...bytes];
+}
+/* Wrap PKCS#1 RSAPrivateKey into PKCS#8 PrivateKeyInfo */
+function pkcs1ToPkcs8(pkcs1){
+  const algo = [0x30,0x0d,0x06,0x09,0x2a,0x86,0x48,0x86,0xf7,0x0d,0x01,0x01,0x01,0x05,0x00]; // rsaEncryption OID + NULL
+  const octet = [0x04, ...derLen(pkcs1.length), ...pkcs1];
+  const version = [0x02,0x01,0x00];
+  const body = [...version, ...algo, ...octet];
+  return new Uint8Array([0x30, ...derLen(body.length), ...body]);
+}
+async function importPrivateKey(pem){
+  let der = pemToDer(pem);
+  if(/BEGIN RSA PRIVATE KEY/.test(pem)) der = pkcs1ToPkcs8(der);
+  return crypto.subtle.importKey("pkcs8", der, {name:"RSA-PSS", hash:"SHA-256"}, false, ["sign"]);
+}
+async function signHeaders(method, path){
+  // path = full path from API root WITHOUT query params, e.g. /trade-api/v2/portfolio/balance
+  const ts = Date.now().toString();
+  const msg = new TextEncoder().encode(ts + method.toUpperCase() + path);
+  const sig = await crypto.subtle.sign({name:"RSA-PSS", saltLength:32}, S.cryptoKey, msg);
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(sig)));
+  return {
+    "KALSHI-ACCESS-KEY": S.keyId,
+    "KALSHI-ACCESS-TIMESTAMP": ts,
+    "KALSHI-ACCESS-SIGNATURE": b64,
+    "Content-Type":"application/json"
+  };
+}
+let HOSTED = false; // true when served from the DESK/TRACK server (uses same-origin proxy, no CORS)
+async function kalshi(method, path, {query="", body=null, auth=false}={}){
+  const url = (HOSTED ? "/kalshi-api/"+S.env : ENVS[S.env].base) + path + (query?("?"+query):"");
+  const opts = {method, headers:{}};
+  if(auth){
+    if(!S.linked) throw new Error("Link your account first.");
+    opts.headers = await signHeaders(method, path);
+  }
+  if(body){ opts.body = JSON.stringify(body); opts.headers["Content-Type"]="application/json"; }
+  const r = await fetch(url, opts);
+  const txt = await r.text();
+  let j; try{ j = JSON.parse(txt); }catch{ j = {raw:txt}; }
+  if(!r.ok){
+    const m = (j.error && (j.error.message||j.error.code)) || j.message || txt || r.status;
+    throw new Error(`${r.status}: ${m}`);
+  }
+  return j;
+}
+
+/* ================= account ================= */
+async function linkAccount(){
+  const keyId = $("keyId").value.trim(), pem = $("pem").value.trim();
+  if(!keyId || !pem){ status("Enter both your API key ID and private key PEM."); return; }
+  $("linkBtn").disabled = true;
+  status("Importing key and checking balance on "+ENVS[S.env].label+"…", true);
+  try{
+    S.keyId = keyId;
+    S.cryptoKey = await importPrivateKey(pem);
+    S.linked = true;
+    const bal = await kalshi("GET","/trade-api/v2/portfolio/balance",{auth:true});
+    $("linkDot").classList.add("on");
+    $("linkTxt").textContent = "Linked · "+ENVS[S.env].label;
+    $("balTxt").textContent = "Balance: $"+((bal.balance??0)/100).toFixed(2);
+    status("Account linked. Balance loaded.");
+    loadPortfolio();
+  }catch(err){
+    S.linked=false;
+    status("Link failed — "+err.message+(String(err.message).includes("Failed to fetch")
+      ? " (likely a CORS block from the browser; if so, the trade endpoints need a small local proxy — I can generate one)"
+      : " (check env, key ID, and that the PEM is the full unedited file)"));
+  }finally{ $("linkBtn").disabled=false; }
+}
+
+async function loadPortfolio(){
+  if(!S.linked){ status("Link your account to load portfolio."); return; }
+  try{
+    status("Loading positions and orders…", true);
+    const pos = await kalshi("GET","/trade-api/v2/portfolio/positions",{auth:true});
+    const list = (pos.market_positions||[]).filter(p=>p.position!==0 || (p.total_traded_fp||p.total_traded));
+    $("posBody").innerHTML = list.length ? list.map(p=>`
+      <tr><td>${p.ticker}</td>
+      <td class="r" style="color:${p.position>=0?'var(--up)':'var(--down)'}">${p.position>0?'+':''}${p.position}</td>
+      <td class="r">${p.market_exposure??"—"}</td>
+      <td class="r">${p.realized_pnl??"—"}</td></tr>`).join("")
+      : '<tr><td colspan="4" class="empty" style="border:none">No open positions.</td></tr>';
+
+    const ords = await kalshi("GET","/trade-api/v2/portfolio/orders",{auth:true, query:"status=resting"});
+    const olist = ords.orders||[];
+    $("ordBody").innerHTML = olist.length ? olist.map(o=>`
+      <tr><td>${o.ticker}</td>
+      <td><span class="pill ${o.side}">${(o.side||"").toUpperCase()} ${o.action||""}</span></td>
+      <td class="r">${o.yes_price ?? o.no_price ?? "—"}</td>
+      <td class="r">${o.remaining_count ?? o.count ?? "—"}</td>
+      <td class="r"><button class="btn ghost" style="padding:4px 10px;font-size:11px" onclick="cancelOrder('${o.order_id}')">Cancel</button></td></tr>`).join("")
+      : '<tr><td colspan="5" class="empty" style="border:none">No resting orders.</td></tr>';
+    status("Portfolio refreshed.");
+  }catch(err){ status("Portfolio load failed — "+err.message); }
+}
+
+async function cancelOrder(id){
+  try{
+    status("Cancelling order…", true);
+    await kalshi("DELETE","/trade-api/v2/portfolio/orders/"+id,{auth:true});
+    status("Order cancelled."); loadPortfolio();
+  }catch(err){ status("Cancel failed — "+err.message); }
+}
+
+/* ================= market data (public) ================= */
+async function discoverSeries(){
+  try{
+    status("Searching Financials series for S&P…", true);
+    const j = await kalshi("GET","/trade-api/v2/series/",{query:"category=Financials"});
+    const hits = (j.series||[]).filter(s=>/s&p|sp500|s&amp;p|inx/i.test((s.title||"")+(s.ticker||"")));
+    if(!hits.length){ status("No S&P series found under Financials — try typing a ticker directly."); return; }
+    $("seriesResults").innerHTML = '<label>Matches</label><select id="seriesSel" onchange="$(\'seriesTicker\').value=this.value">'+
+      hits.map(s=>`<option value="${s.ticker}">${s.ticker} — ${s.title}</option>`).join("")+'</select>';
+    $("seriesTicker").value = hits[0].ticker;
+    status(hits.length+" series found. Pick one, then load markets.");
+  }catch(err){ status("Series search failed — "+err.message); }
+}
+
+async function loadMarkets(){
+  const st = $("seriesTicker").value.trim().toUpperCase();
+  if(!st){ status("Enter a series ticker (try 'Find S&P series')."); return; }
+  $("loadBtn").disabled = true;
+  try{
+    status("Loading open markets for "+st+"…", true);
+    const j = await kalshi("GET","/trade-api/v2/markets",{query:"series_ticker="+encodeURIComponent(st)+"&status=open&limit=200"});
+    S.markets = j.markets||[];
+    if(!S.markets.length){ $("ladder").innerHTML='<div class="empty">No open markets for '+st+' right now. Daily strikes usually list before the US session — try another series or later.</div>'; status(""); return; }
+    S.events = {};
+    S.markets.forEach(m=>{ (S.events[m.event_ticker] ||= []).push(m); });
+    const evs = Object.keys(S.events).sort();
+    $("eventPickWrap").style.display = evs.length>1 ? "block" : "none";
+    $("eventPick").innerHTML = evs.map(e=>`<option value="${e}">${e} (${S.events[e].length} strikes)</option>`).join("");
+    renderLadder();
+    status(S.markets.length+" markets loaded across "+evs.length+" event(s). Click a rung to trade it.");
+  }catch(err){
+    status("Market load failed — "+err.message);
+  }finally{ $("loadBtn").disabled=false; }
+}
+
+function marketStrike(m){
+  if(m.floor_strike!=null) return Number(m.floor_strike);
+  if(m.cap_strike!=null) return Number(m.cap_strike);
+  const mt = (m.subtitle||m.yes_sub_title||m.title||"").replace(/,/g,"").match(/(\d{3,6}(?:\.\d+)?)/);
+  return mt?Number(mt[1]):null;
+}
+function px(m,f){ // price helper: prefer cents fields, fall back to *_dollars
+  if(m[f]!=null) return Number(m[f]);
+  const d = m[f+"_dollars"]; return d!=null ? Math.round(Number(d)*100) : null;
+}
+
+function renderLadder(){
+  const ev = $("eventPickWrap").style.display==="none" ? Object.keys(S.events)[0] : $("eventPick").value;
+  const list = (S.events[ev]||[]).slice().sort((a,b)=>(marketStrike(b)??0)-(marketStrike(a)??0));
+  const lvl = S.impliedLevel;
+  let html="", marker=false;
+  list.forEach(m=>{
+    const k = marketStrike(m);
+    if(!marker && lvl!=null && k!=null && k<=lvl){ html+=futMarker(lvl); marker=true; }
+    const yesAsk=px(m,"yes_ask"), yesBid=px(m,"yes_bid");
+    const noAsk = yesBid!=null ? 100-yesBid : null;
+    const prob = yesAsk ?? yesBid;
+    const above = (lvl!=null&&k!=null) ? lvl>=k : null;
+    let edge='<span class="edge na">—</span>';
+    if(prob!=null && lvl!=null && k!=null){
+      const dist = lvl-k;
+      if(prob<=60 && dist>10) edge='<span class="edge pos">cheap</span>';
+      else if(prob>=85 && dist<0) edge='<span class="edge neg">rich</span>';
+      else edge='<span class="edge na">fair</span>';
+    }
+    html+=`<div class="rung ${above===true?'above':above===false?'below':''} ${S.selTicker===m.ticker?'sel':''}"
+      onclick="pickMarket('${m.ticker}')" role="button" tabindex="0"
+      onkeydown="if(event.key==='Enter')pickMarket('${m.ticker}')">
+      <div class="strike">${k!=null?k.toLocaleString():m.ticker}<small>${m.ticker}</small></div>
+      <div class="bar"><i style="width:${prob??0}%"></i></div>
+      <div class="px">${yesAsk!=null?yesAsk+"¢":"—"}<small>Yes ask</small></div>
+      <div class="px">${noAsk!=null?noAsk+"¢":"—"}<small>No ask</small></div>
+      ${edge}
+    </div>`;
+  });
+  if(!marker && lvl!=null) html+=futMarker(lvl);
+  $("ladder").innerHTML = html || '<div class="empty">No markets in this event.</div>';
+}
+const futMarker = lvl => `<div class="futLine"><span class="rule"></span><span class="tag">ES-implied ${Number(lvl).toLocaleString(undefined,{maximumFractionDigits:1})}</span><span class="rule"></span></div>`;
+
+function pickMarket(t){
+  S.selTicker = t;
+  const m = S.markets.find(x=>x.ticker===t);
+  S.selTitle = m ? (m.title||m.subtitle||t) : t;
+  $("tkTicker").textContent = t;
+  const ya = m?px(m,"yes_ask"):null;
+  if(ya!=null) $("oPrice").value = ya;
+  updateCost(); renderLadder();
+}
+function updateCost(){
+  const c=+$("oCount").value||0, p=+$("oPrice").value||0, side=$("oSide").value, act=$("oAction").value;
+  if(!S.selTicker){ $("tkCost").textContent="Select a strike from the ladder, set price and size, then review. Limit orders only."; return; }
+  const cost=(c*p/100).toFixed(2), payout=c.toFixed(2);
+  $("tkCost").innerHTML = act==="buy"
+    ? `<b>${act.toUpperCase()} ${c} ${side.toUpperCase()}</b> @ ${p}¢ → max cost <b>$${cost}</b>, pays <b>$${payout}</b> if ${side==="yes"?"Yes":"No"} settles. Exchange fees extra.`
+    : `<b>SELL ${c} ${side.toUpperCase()}</b> @ ${p}¢ → closes/short-sells exposure; credit ≈ <b>$${cost}</b> before fees.`;
+}
+["oCount","oPrice","oSide","oAction"].forEach(id=>$(id).addEventListener("input",updateCost));
+
+/* ================= orders ================= */
+function openConfirm(){
+  if(!S.selTicker){ status("Pick a market from the ladder first."); return; }
+  const c=parseInt($("oCount").value), p=parseInt($("oPrice").value);
+  if(!(c>0)||!(p>=1&&p<=99)){ status("Contracts must be ≥1 and limit price 1–99¢."); return; }
+  if(!S.linked){ status("Link your account before sending orders."); return; }
+  const side=$("oSide").value, act=$("oAction").value;
+  $("modalSum").innerHTML =
+    `Env: <b>${ENVS[S.env].label}</b><br>Market: <b>${S.selTicker}</b><br>`+
+    `${act.toUpperCase()} <b>${c}</b> × <b>${side.toUpperCase()}</b> @ limit <b>${p}¢</b><br>`+
+    `Max cost: <b>$${(c*p/100).toFixed(2)}</b> · Max payout: <b>$${c.toFixed(2)}</b>`+
+    (S.env==="prod"?'<br><span style="color:var(--down)">Real-money order.</span>':"");
+  $("modalBg").classList.add("open");
+}
+const closeConfirm = ()=>$("modalBg").classList.remove("open");
+
+async function sendOrder(){
+  $("sendBtn").disabled=true;
+  const side=$("oSide").value, act=$("oAction").value;
+  const c=parseInt($("oCount").value), p=parseInt($("oPrice").value);
+  const body = {
+    ticker:S.selTicker, action:act, side, count:c, type:"limit",
+    client_order_id: crypto.randomUUID()
+  };
+  if(side==="yes") body.yes_price=p; else body.no_price=p;
+  try{
+    status("Sending order…", true);
+    const j = await kalshi("POST","/trade-api/v2/portfolio/orders",{auth:true, body});
+    const o=j.order||{};
+    status(`Order accepted — id ${o.order_id||"?"} · status ${o.status||"submitted"}.`);
+    closeConfirm(); loadPortfolio();
+  }catch(err){
+    status("Order failed — "+err.message);
+  }finally{ $("sendBtn").disabled=false; }
+}
+
+/* ================= futures research (Claude + web search) ================= */
+async function runResearch(){
+  $("researchBtn").disabled=true;
+  status("Researching ES futures and prior SPX close…", true);
+  if(HOSTED){
+    try{
+      const r = await fetch("/kalshi-futures");
+      const j = await r.json();
+      if(j.error) throw new Error(j.error.message);
+      S.esFut=j.esFuture; S.priorClose=j.spxPriorClose;
+      S.impliedLevel=j.impliedOpen ?? j.esFuture;
+      renderGap(); renderLadder();
+      status("Futures loaded from server.");
+    }catch(err){ status("Futures fetch failed — "+err.message+". You can enter the level manually."); }
+    finally{ $("researchBtn").disabled=false; }
+    return;
+  }
+  try{
+    const resp = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        model:"claude-sonnet-4-6", max_tokens:600,
+        messages:[{role:"user",content:`Use web search. Find right now: (1) current E-mini S&P 500 front-month futures price, (2) most recent official S&P 500 index close. Respond ONLY with JSON, no fences: {"esFuture":number,"spxPriorClose":number,"impliedOpen":number}. impliedOpen = your fair-value-adjusted cash-open estimate; if unsure, use esFuture.`}],
+        tools:[{type:"web_search_20250305",name:"web_search"}]
+      })
+    });
+    const data = await resp.json();
+    if(data.error) throw new Error(data.error.message);
+    const text=(data.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");
+    const s=text.indexOf("{"), e=text.lastIndexOf("}");
+    const j=JSON.parse(text.slice(s,e+1).replace(/```/g,""));
+    S.esFut=j.esFuture; S.priorClose=j.spxPriorClose;
+    S.impliedLevel=j.impliedOpen ?? j.esFuture;
+    renderGap(); renderLadder();
+    status("Futures research complete.");
+  }catch(err){ status("Research failed — "+err.message); }
+  finally{ $("researchBtn").disabled=false; }
+}
+function applyManualLevel(){
+  const v=parseFloat($("manualLvl").value);
+  if(!v){ status("Enter a numeric level first."); return; }
+  S.impliedLevel=v; renderGap(); renderLadder();
+  status("Manual level applied to ladder.");
+}
+function renderGap(){
+  $("priorClose").textContent=fmt(S.priorClose);
+  $("esFut").textContent=fmt(S.esFut);
+  $("implOpen").textContent=fmt(S.impliedLevel);
+  if(S.priorClose!=null && S.impliedLevel!=null){
+    const g=S.impliedLevel-S.priorClose, pct=g/S.priorClose*100;
+    $("gapPts").textContent=(g>=0?"+":"")+g.toFixed(2)+" pts";
+    $("gapPct").textContent=(pct>=0?"+":"")+pct.toFixed(2)+"%";
+    $("gapPts").className="val "+(g>=0?"up":"down");
+    $("gapPct").className="val "+(g>=0?"up":"down");
+    $("gapRead").innerHTML = g>=0
+      ? `Futures imply a <b>gap-up open near ${fmt(S.impliedLevel)}</b> (+${g.toFixed(1)} pts). Strikes at or below that line are in the money on the open — check if their Yes ask reflects it.`
+      : `Futures imply a <b>gap-down open near ${fmt(S.impliedLevel)}</b> (${g.toFixed(1)} pts). Strikes above the line need an intraday rally — cheap Yes there is cheap for a reason.`;
+  }
+}
+setEnv("demo");
+// Detect self-hosted mode: if the DESK/TRACK server's futures route answers, use same-origin proxying everywhere.
+(async()=>{
+  try{
+    const r = await fetch("/kalshi-futures",{method:"GET"});
+    if(r.ok || r.status===502){ HOSTED = true; status("Running on DESK/TRACK server — proxy mode on (no CORS issues)."); }
+  }catch(_){/* artifact / direct mode */}
+})();
+</script>
+</body>
+</html>
