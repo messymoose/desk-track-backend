@@ -18,6 +18,19 @@ const DATA_FILE = path.join(DATA_DIR, "data.json");
 const SEED_FILE = path.join(__dirname, "seed.json");
 const KEYS = ["contacts", "targets", "templates", "profile", "saved", "resume", "letters"];
 
+// ---- Kalshi Open Desk config (page served at /kalshi, gated by its own passphrase) ----
+const KALSHI_PASS = (process.env.KALSHI_PASS || "deskpass").trim();
+const KALSHI_BASES = {
+  demo: "https://external-api.demo.kalshi.co",
+  prod: "https://external-api.kalshi.com",
+};
+const KALSHI_HTML = path.join(__dirname, "kalshi.html");
+function kalshiAuthed(req) {
+  const a = Buffer.from(String(req.headers["x-kalshi-pass"] || ""));
+  const b = Buffer.from(KALSHI_PASS);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
 // ---- storage ----
 let store = {};
 function loadStore() {
@@ -146,8 +159,8 @@ function readBody(req) {
 
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Kalshi-Pass, Kalshi-Access-Key, Kalshi-Access-Timestamp, Kalshi-Access-Signature");
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
 
   const url = new URL(req.url, "http://x");
@@ -155,6 +168,77 @@ const server = http.createServer(async (req, res) => {
 
   if (p === "/" || p === "/health") return send(res, 200, { ok: true, service: "desk-track-backend" });
   if (p === "/api/login") return send(res, authed(req) ? 200 : 401, { ok: authed(req) });
+
+  // ═══════════════ KALSHI OPEN DESK (own passphrase gate: x-kalshi-pass) ═══════════════
+
+  // The trading page itself (public shell — shows a lock screen until unlocked)
+  if (p === "/kalshi" && req.method === "GET") {
+    try {
+      const html = fs.readFileSync(KALSHI_HTML);
+      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
+      return res.end(html);
+    } catch {
+      return send(res, 404, { error: "kalshi.html not found next to server.js" });
+    }
+  }
+
+  // Lock-screen unlock check
+  if (p === "/kalshi-auth-check") {
+    return kalshiAuthed(req)
+      ? send(res, 200, { ok: true })
+      : send(res, 401, { error: { message: "unauthorized" } });
+  }
+
+  // ES futures + prior SPX close for the gap panel (Yahoo Finance, no key needed)
+  if (p === "/kalshi-futures" && req.method === "GET") {
+    if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
+    try {
+      const yh = async (sym) => {
+        const r = await fetch(
+          `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=1m`,
+          { headers: { "User-Agent": "Mozilla/5.0" } }
+        );
+        const j = await r.json();
+        const meta = (j && j.chart && j.chart.result && j.chart.result[0] && j.chart.result[0].meta) || {};
+        return { price: meta.regularMarketPrice ?? null, prevClose: meta.chartPreviousClose ?? meta.previousClose ?? null };
+      };
+      const [es, spx] = await Promise.all([yh("ES=F"), yh("^GSPC")]);
+      return send(res, 200, {
+        esFuture: es.price,
+        spxPriorClose: spx.prevClose ?? spx.price,
+        impliedOpen: es.price,
+        asOf: new Date().toISOString(),
+      });
+    } catch (e) {
+      return send(res, 502, { error: { message: "Futures fetch error: " + String(e.message || e) } });
+    }
+  }
+
+  // Proxy for Kalshi Trade API. The browser signs each request (RSA-PSS) and
+  // sends the three KALSHI-ACCESS-* headers; we forward them verbatim. The
+  // private key never touches this server — only single-use signed headers.
+  const km = p.match(/^\/kalshi-api\/(demo|prod)(\/.*)$/);
+  if (km) {
+    if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
+    try {
+      const target = KALSHI_BASES[km[1]] + km[2] + (url.search || "");
+      const headers = { "Content-Type": "application/json" };
+      for (const h of ["kalshi-access-key", "kalshi-access-timestamp", "kalshi-access-signature"]) {
+        if (req.headers[h]) headers[h] = req.headers[h];
+      }
+      const init = { method: req.method, headers };
+      if (req.method !== "GET" && req.method !== "HEAD") {
+        init.body = JSON.stringify(await readBody(req));
+      }
+      const up = await fetch(target, init);
+      const text = await up.text();
+      return send(res, up.status, text);
+    } catch (e) {
+      return send(res, 502, { error: { message: "Kalshi proxy error: " + String(e.message || e) } });
+    }
+  }
+
+  // ═══════════════ end Kalshi section — DESK/TRACK continues unchanged ═══════════════
 
   if (p === "/fetch") {
     const target = url.searchParams.get("url");
@@ -279,5 +363,6 @@ server.listen(PORT, () => {
   console.log("DATA_DIR:", DATA_DIR);
   console.log("Data file:", DATA_FILE);
   console.log("Passphrase length:", PASSPHRASE.length, PASSPHRASE === "changeme" ? "(WARNING: default)" : "(custom set)");
+  console.log("Kalshi desk: /kalshi", KALSHI_PASS === "deskpass" ? "(default passphrase)" : "(custom passphrase set)");
   console.log("Ready.");
 });
