@@ -137,6 +137,11 @@ footer{margin-top:30px;font-size:12px;color:#5B6478;line-height:1.6;font-family:
         <button class="btn" onclick="linkAccount()" id="linkBtn">Link account</button>
         <span class="mono" style="font-size:13px" id="balTxt"></span>
       </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px" id="remRow">
+        <input type="checkbox" id="remember" checked style="width:auto">
+        <label for="remember" style="margin:0;text-transform:none;letter-spacing:0;font-size:12px;cursor:pointer">Remember key on my server (encrypted with the desk passphrase)</label>
+      </div>
+      <button class="btn ghost" style="margin-top:10px;padding:7px 14px;font-size:12px;display:none" id="forgetBtn" onclick="forgetCred()">Forget saved key</button>
       <div class="warn">
         <b>Handle with care.</b> Your key is held in this page's memory only — never stored, never sent anywhere except directly to Kalshi's API over HTTPS, and gone on refresh. Still, treat any pasted private key as sensitive: use a key you can revoke, start in <b>Demo</b>, and only switch to Production once you've verified behavior. Orders placed here are real and binding in Production.
       </div>
@@ -327,6 +332,53 @@ async function kalshi(method, path, {query="", body=null, auth=false}={}){
   return j;
 }
 
+/* ================= remembered credentials (encrypted with deskpass) ================= */
+const b64e = buf => { const u=new Uint8Array(buf); let s=""; for(let i=0;i<u.length;i++) s+=String.fromCharCode(u[i]); return btoa(s); };
+const b64d = str => { const bin=atob(str), u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; };
+async function deriveAes(pass, salt){
+  const km = await crypto.subtle.importKey("raw", new TextEncoder().encode(pass), "PBKDF2", false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt, iterations:250000, hash:"SHA-256"}, km, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function saveCred(){
+  if(!HOSTED || !$("remember").checked || !PASS) return;
+  try{
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveAes(PASS, salt);
+    const plain = new TextEncoder().encode(JSON.stringify({keyId:$("keyId").value.trim(), pem:$("pem").value.trim(), env:S.env}));
+    const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, key, plain);
+    const blob = b64e(salt)+"."+b64e(iv)+"."+b64e(ct);
+    await fetch("/kalshi-cred",{method:"POST",headers:{"Content-Type":"application/json","x-kalshi-pass":PASS},body:JSON.stringify({cred:blob})});
+    $("forgetBtn").style.display="inline-block";
+  }catch(e){ console.error("saveCred:", e); }
+}
+async function tryRestoreCred(){
+  if(!HOSTED || !PASS) return;
+  try{
+    const r = await fetch("/kalshi-cred",{headers:{"x-kalshi-pass":PASS}});
+    const j = await r.json();
+    if(!j.cred) return;
+    $("forgetBtn").style.display="inline-block";
+    const [s,i,c] = j.cred.split(".");
+    const key = await deriveAes(PASS, b64d(s));
+    const plain = await crypto.subtle.decrypt({name:"AES-GCM", iv:b64d(i)}, key, b64d(c));
+    const cred = JSON.parse(new TextDecoder().decode(plain));
+    setEnv(cred.env || "demo");
+    $("keyId").value = cred.keyId; $("pem").value = cred.pem;
+    status("Saved key decrypted — linking automatically…", true);
+    await linkAccount();
+  }catch(e){
+    status("Found a saved key but couldn't decrypt it (was it saved under a different passphrase?). Paste the key manually and re-save.");
+  }
+}
+async function forgetCred(){
+  try{
+    await fetch("/kalshi-cred",{method:"DELETE",headers:{"x-kalshi-pass":PASS}});
+    $("forgetBtn").style.display="none";
+    status("Saved key deleted from server.");
+  }catch(e){ status("Delete failed — "+e.message); }
+}
+
 /* ================= account ================= */
 async function linkAccount(){
   const keyId = $("keyId").value.trim(), pem = $("pem").value.trim();
@@ -342,6 +394,7 @@ async function linkAccount(){
     $("linkTxt").textContent = "Linked · "+ENVS[S.env].label;
     $("balTxt").textContent = "Balance: $"+((bal.balance??0)/100).toFixed(2);
     status("Account linked. Balance loaded.");
+    saveCred();
     loadPortfolio();
   }catch(err){
     S.linked=false;
@@ -587,6 +640,7 @@ async function unlock(){
     PASS = p;
     $("lockBg").classList.remove("open");
     status("Unlocked — proxy mode on (no CORS issues).");
+    tryRestoreCred();
   }catch(_){ $("lockErr").textContent = "Wrong passphrase."; }
 }
 setEnv("demo");

@@ -189,6 +189,28 @@ const server = http.createServer(async (req, res) => {
       : send(res, 401, { error: { message: "unauthorized" } });
   }
 
+  // Encrypted saved credentials (ciphertext only — encrypted/decrypted in the
+  // browser with the desk passphrase; this server never sees the private key).
+  if (p === "/kalshi-cred") {
+    if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
+    const CRED_FILE = path.join(DATA_DIR, "kalshi-cred.json");
+    if (req.method === "GET") {
+      try { return send(res, 200, JSON.parse(fs.readFileSync(CRED_FILE, "utf8"))); }
+      catch { return send(res, 200, { cred: null }); }
+    }
+    if (req.method === "POST") {
+      const body = await readBody(req);
+      if (!body.cred || typeof body.cred !== "string") return send(res, 400, { error: { message: "missing cred" } });
+      try { fs.mkdirSync(DATA_DIR, { recursive: true }); fs.writeFileSync(CRED_FILE, JSON.stringify({ cred: body.cred, savedAt: Date.now() })); }
+      catch (e) { return send(res, 500, { error: { message: String(e.message || e) } }); }
+      return send(res, 200, { ok: true });
+    }
+    if (req.method === "DELETE") {
+      try { fs.unlinkSync(CRED_FILE); } catch {}
+      return send(res, 200, { ok: true });
+    }
+  }
+
   // ES futures + prior SPX close for the gap panel (Yahoo Finance, no key needed)
   if (p === "/kalshi-futures" && req.method === "GET") {
     if (!kalshiAuthed(req)) return send(res, 401, { error: { message: "unauthorized" } });
