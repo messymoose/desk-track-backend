@@ -180,6 +180,28 @@ footer{margin-top:30px;font-size:12px;color:#5B6478;line-height:1.6;font-family:
         <button class="btn buy" style="flex:1" onclick="openConfirm()">Review order</button>
       </div>
       <div class="readout" style="margin-top:12px" id="tkCost">Select a strike from the ladder, set price and size, then review. Limit orders only — this desk never sends market orders.</div>
+      <h2 style="margin-top:20px">Auto-pick rules</h2>
+      <div class="row2">
+        <div><label>Strategy</label>
+          <select id="apSide">
+            <option value="yes">Buy YES below futures line</option>
+            <option value="no">Buy NO above futures line</option>
+          </select></div>
+        <div><label>Safety buffer (pts)</label><input id="apBuffer" type="number" value="15" min="0"></div>
+      </div>
+      <div class="row2">
+        <div><label>Max price ¢</label><input id="apMaxPx" type="number" value="70" min="1" max="99"></div>
+        <div><label>Contracts</label><input id="apQty" type="number" value="10" min="1"></div>
+      </div>
+      <div class="row2" style="margin-top:2px">
+        <div><label>Daily spend cap $</label><input id="apCap" type="number" value="25" min="1"></div>
+        <div><label>&nbsp;</label><button class="btn" style="width:100%" onclick="autoPick()">Auto-pick now</button></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+        <input type="checkbox" id="apArm" style="width:auto">
+        <label for="apArm" style="margin:0;text-transform:none;letter-spacing:0;font-size:12px;cursor:pointer">Arm auto-book: send the order immediately, no confirm tap (until cap is hit)</label>
+      </div>
+      <div class="readout" style="margin-top:10px;font-size:12px" id="apStatus">Auto-pick scans the loaded ladder and selects the strike closest to the futures line that still clears your buffer and price ceiling — the best value your rules allow. Unarmed, it fills the ticket and asks you to confirm.</div>
     </div>
   </div>
 
@@ -241,6 +263,7 @@ footer{margin-top:30px;font-size:12px;color:#5B6478;line-height:1.6;font-family:
   <div class="modal">
     <h3>Confirm order</h3>
     <div class="sum" id="modalSum"></div>
+    <div id="modalErr" class="mono" style="font-size:12px;color:var(--down);margin-bottom:12px;min-height:14px;line-height:1.5"></div>
     <div class="acts">
       <button class="btn ghost" onclick="closeConfirm()">Cancel</button>
       <button class="btn" id="sendBtn" onclick="sendOrder()">Send to Kalshi</button>
@@ -392,7 +415,7 @@ async function linkAccount(){
     const bal = await kalshi("GET","/trade-api/v2/portfolio/balance",{auth:true});
     $("linkDot").classList.add("on");
     $("linkTxt").textContent = "Linked · "+ENVS[S.env].label;
-    $("balTxt").textContent = "Balance: $"+((bal.balance??0)/100).toFixed(2);
+    $("balTxt").textContent = "Balance: $"+(bal.balance_dollars!=null?Number(bal.balance_dollars).toFixed(2):((bal.balance??0)/100).toFixed(2));
     status("Account linked. Balance loaded.");
     saveCred();
     loadPortfolio();
@@ -409,21 +432,22 @@ async function loadPortfolio(){
   try{
     status("Loading positions and orders…", true);
     const pos = await kalshi("GET","/trade-api/v2/portfolio/positions",{auth:true});
-    const list = (pos.market_positions||[]).filter(p=>p.position!==0 || (p.total_traded_fp||p.total_traded));
+    const posn = p => Number(p.position_fp ?? p.position ?? 0);
+    const list = (pos.market_positions||[]).filter(p=>posn(p)!==0);
     $("posBody").innerHTML = list.length ? list.map(p=>`
       <tr><td>${p.ticker}</td>
-      <td class="r" style="color:${p.position>=0?'var(--up)':'var(--down)'}">${p.position>0?'+':''}${p.position}</td>
-      <td class="r">${p.market_exposure??"—"}</td>
-      <td class="r">${p.realized_pnl??"—"}</td></tr>`).join("")
+      <td class="r" style="color:${posn(p)>=0?'var(--up)':'var(--down)'}">${posn(p)>0?'+':''}${posn(p)}</td>
+      <td class="r">${p.market_exposure_dollars ?? p.market_exposure ?? "—"}</td>
+      <td class="r">${p.realized_pnl_dollars ?? p.realized_pnl ?? "—"}</td></tr>`).join("")
       : '<tr><td colspan="4" class="empty" style="border:none">No open positions.</td></tr>';
 
     const ords = await kalshi("GET","/trade-api/v2/portfolio/orders",{auth:true, query:"status=resting"});
     const olist = ords.orders||[];
     $("ordBody").innerHTML = olist.length ? olist.map(o=>`
       <tr><td>${o.ticker}</td>
-      <td><span class="pill ${o.side}">${(o.side||"").toUpperCase()} ${o.action||""}</span></td>
-      <td class="r">${o.yes_price ?? o.no_price ?? "—"}</td>
-      <td class="r">${o.remaining_count ?? o.count ?? "—"}</td>
+      <td><span class="pill ${(o.outcome_side||o.side)==="no"?"no":"yes"}">${(o.outcome_side||o.side||"").toUpperCase()}</span></td>
+      <td class="r">${o.price_dollars ?? o.yes_price ?? o.no_price ?? "—"}</td>
+      <td class="r">${o.remaining_count_fp ?? o.remaining_count ?? o.count ?? "—"}</td>
       <td class="r"><button class="btn ghost" style="padding:4px 10px;font-size:11px" onclick="cancelOrder('${o.order_id}')">Cancel</button></td></tr>`).join("")
       : '<tr><td colspan="5" class="empty" style="border:none">No resting orders.</td></tr>';
     status("Portfolio refreshed.");
@@ -433,7 +457,7 @@ async function loadPortfolio(){
 async function cancelOrder(id){
   try{
     status("Cancelling order…", true);
-    await kalshi("DELETE","/trade-api/v2/portfolio/orders/"+id,{auth:true});
+    await kalshi("DELETE","/trade-api/v2/portfolio/events/orders/"+id,{auth:true});
     status("Order cancelled."); loadPortfolio();
   }catch(err){ status("Cancel failed — "+err.message); }
 }
@@ -465,7 +489,9 @@ async function loadMarkets(){
     S.markets.forEach(m=>{ (S.events[m.event_ticker] ||= []).push(m); });
     const evs = Object.keys(S.events).sort();
     $("eventPickWrap").style.display = evs.length>1 ? "block" : "none";
-    $("eventPick").innerHTML = evs.map(e=>`<option value="${e}">${e} (${S.events[e].length} strikes)</option>`).join("");
+    $("eventPick").innerHTML = evs.map(e=>`<option value="${e}">${prettyEvent(e)} · ${S.events[e].length} strikes</option>`).join("");
+    // default to the 10am event when present
+    const ten = evs.find(e=>/H1000$/.test(e)); if(ten) $("eventPick").value = ten;
     renderLadder();
     status(S.markets.length+" markets loaded across "+evs.length+" event(s). Click a rung to trade it.");
   }catch(err){
@@ -493,7 +519,7 @@ function renderLadder(){
     const k = marketStrike(m);
     if(!marker && lvl!=null && k!=null && k<=lvl){ html+=futMarker(lvl); marker=true; }
     const yesAsk=px(m,"yes_ask"), yesBid=px(m,"yes_bid");
-    const noAsk = yesBid!=null ? 100-yesBid : null;
+    const noAsk = px(m,"no_ask") ?? (yesBid!=null ? 100-yesBid : null);
     const prob = yesAsk ?? yesBid;
     const above = (lvl!=null&&k!=null) ? lvl>=k : null;
     let edge='<span class="edge na">—</span>';
@@ -516,6 +542,17 @@ function renderLadder(){
   if(!marker && lvl!=null) html+=futMarker(lvl);
   $("ladder").innerHTML = html || '<div class="empty">No markets in this event.</div>';
 }
+// Turn KXINXU-26AUG10H1000 into "Mon Aug 10 · 10am ET"
+function prettyEvent(ev){
+  const m = ev.match(/-(\d{2})([A-Z]{3})(\d{2})H(\d{2})(\d{2})$/);
+  if(!m) return ev;
+  const [,yy,mon,dd,hh,mi] = m;
+  const months={JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+  const d = new Date(2000+ +yy, months[mon]??0, +dd);
+  const day = d.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+  let H=+hh; const ap = H>=12?"pm":"am"; H = H%12 || 12;
+  return `${day} · ${H}${mi==="00"?"":":"+mi}${ap} ET`;
+}
 const futMarker = lvl => `<div class="futLine"><span class="rule"></span><span class="tag">ES-implied ${Number(lvl).toLocaleString(undefined,{maximumFractionDigits:1})}</span><span class="rule"></span></div>`;
 
 function pickMarket(t){
@@ -537,6 +574,75 @@ function updateCost(){
 }
 ["oCount","oPrice","oSide","oAction"].forEach(id=>$(id).addEventListener("input",updateCost));
 
+/* ================= auto-pick engine ================= */
+let spentToday = 0; // session spend tracker (resets on page reload)
+
+function autoPick(){
+  const lvl = S.impliedLevel;
+  if(lvl==null){ $("apStatus").textContent="Run 'Research futures gap' first — auto-pick needs the futures line."; return; }
+  if(!S.markets.length){ $("apStatus").textContent="Load live Kalshi markets first — nothing to scan."; return; }
+
+  const side = $("apSide").value;
+  const buffer = Math.max(0, +$("apBuffer").value||0);
+  const maxPx = Math.min(99, Math.max(1, +$("apMaxPx").value||70));
+  const qty = Math.max(1, parseInt($("apQty").value)||1);
+
+  // candidates in the currently displayed event
+  const ev = $("eventPickWrap").style.display==="none" ? Object.keys(S.events)[0] : $("eventPick").value;
+  const list = S.events[ev]||[];
+  let best=null, bestDist=Infinity, bestPx=null;
+
+  for(const m of list){
+    const k = marketStrike(m); if(k==null) continue;
+    if(side==="yes"){
+      // strike must sit at least `buffer` pts BELOW the futures line
+      const clearance = lvl - k;
+      const ask = px(m,"yes_ask");
+      if(clearance>=buffer && ask!=null && ask>=1 && ask<=maxPx && clearance<bestDist){
+        best=m; bestDist=clearance; bestPx=ask;
+      }
+    }else{
+      // NO: strike must sit at least `buffer` pts ABOVE the futures line
+      const clearance = k - lvl;
+      const yesBid = px(m,"yes_bid");
+      const noAsk = px(m,"no_ask") ?? (yesBid!=null ? 100-yesBid : null);
+      if(clearance>=buffer && noAsk!=null && noAsk>=1 && noAsk<=maxPx && clearance<bestDist){
+        best=m; bestDist=clearance; bestPx=noAsk;
+      }
+    }
+  }
+
+  if(!best){
+    $("apStatus").textContent = `No strike fits: ${side.toUpperCase()} needs ≥${buffer} pts of clearance from ${fmt(lvl)} at ≤${maxPx}¢. Loosen the buffer or price ceiling, or the market is fully priced right now.`;
+    return;
+  }
+
+  // fill the ticket
+  pickMarket(best.ticker);
+  $("oAction").value="buy"; $("oSide").value=side;
+  $("oCount").value = qty;
+  $("oPrice").value = bestPx;
+  updateCost();
+
+  const cost = qty*bestPx/100;
+  const cap = Math.max(1, +$("apCap").value||25);
+  const kk = marketStrike(best);
+  $("apStatus").innerHTML = `Picked <b>${best.ticker}</b> — strike ${kk!=null?kk.toLocaleString():"?"} sits ${bestDist.toFixed(1)} pts on your side of the futures line at ${bestPx}¢ (${qty} × = $${cost.toFixed(2)} risk, $${qty.toFixed(2)} max payout).`;
+
+  if($("apArm").checked){
+    if(spentToday + cost > cap){
+      $("apStatus").innerHTML += ` <span style="color:var(--down)">Auto-book blocked: $${cost.toFixed(2)} would exceed your $${cap} session cap (spent $${spentToday.toFixed(2)}). Confirm manually if you really want it.</span>`;
+      openConfirm();
+      return;
+    }
+    if(!S.linked){ $("apStatus").innerHTML += " Link your account to auto-book."; return; }
+    status("Auto-booking…", true);
+    sendOrder();
+  }else{
+    openConfirm();
+  }
+}
+
 /* ================= orders ================= */
 function openConfirm(){
   if(!S.selTicker){ status("Pick a market from the ladder first."); return; }
@@ -549,26 +655,40 @@ function openConfirm(){
     `${act.toUpperCase()} <b>${c}</b> × <b>${side.toUpperCase()}</b> @ limit <b>${p}¢</b><br>`+
     `Max cost: <b>$${(c*p/100).toFixed(2)}</b> · Max payout: <b>$${c.toFixed(2)}</b>`+
     (S.env==="prod"?'<br><span style="color:var(--down)">Real-money order.</span>':"");
+  $("modalErr").textContent="";
   $("modalBg").classList.add("open");
 }
 const closeConfirm = ()=>$("modalBg").classList.remove("open");
 
 async function sendOrder(){
   $("sendBtn").disabled=true;
+  $("modalErr").textContent="";
   const side=$("oSide").value, act=$("oAction").value;
   const c=parseInt($("oCount").value), p=parseInt($("oPrice").value);
+  // V2 single-book model: book_side bid ≡ yes, ask ≡ no. Price is ALWAYS on the
+  // yes-leg scale, so a NO order at P¢ is submitted as an ask at (100-P)¢.
+  const buyingYes = (act==="buy" && side==="yes") || (act==="sell" && side==="no");
+  const bookSide = buyingYes ? "bid" : "ask";
+  const yesLegCents = (side==="yes") ? p : (100-p);
   const body = {
-    ticker:S.selTicker, action:act, side, count:c, type:"limit",
+    ticker: S.selTicker,
+    side: bookSide,
+    count: c.toFixed(2),
+    price: (yesLegCents/100).toFixed(4),
+    time_in_force: "good_till_canceled",
+    self_trade_prevention_type: "taker_at_cross",
     client_order_id: crypto.randomUUID()
   };
-  if(side==="yes") body.yes_price=p; else body.no_price=p;
   try{
     status("Sending order…", true);
-    const j = await kalshi("POST","/trade-api/v2/portfolio/orders",{auth:true, body});
-    const o=j.order||{};
-    status(`Order accepted — id ${o.order_id||"?"} · status ${o.status||"submitted"}.`);
+    const j = await kalshi("POST","/trade-api/v2/portfolio/events/orders",{auth:true, body});
+    const o=j.order||j||{};
+    spentToday += c*p/100;
+    status(`Order accepted — id ${o.order_id||"?"} · status ${o.status||"submitted"} · session spend $${spentToday.toFixed(2)}.`);
     closeConfirm(); loadPortfolio();
   }catch(err){
+    // show the error IN the modal — the status line sits behind it
+    $("modalErr").textContent = "Order failed — "+err.message;
     status("Order failed — "+err.message);
   }finally{ $("sendBtn").disabled=false; }
 }
