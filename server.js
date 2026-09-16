@@ -16,7 +16,7 @@ const PASSPHRASE = (process.env.PASSPHRASE || "changeme").trim();
 const DATA_DIR = (process.env.DATA_DIR || __dirname).trim();
 const DATA_FILE = path.join(DATA_DIR, "data.json");
 const SEED_FILE = path.join(__dirname, "seed.json");
-const KEYS = ["contacts", "targets", "templates", "profile", "saved", "resume", "letters", "inboxJobs", "inboxSeen"];
+const KEYS = ["contacts", "targets", "templates", "profile", "saved", "resume", "letters", "inboxJobs", "inboxSeen", "jobSummaries"];
 
 // ---- storage ----
 let store = {};
@@ -361,6 +361,71 @@ const EXTRACT_SYSTEM = [
   "If the email contains no job posting at all, return exactly []."
 ].join(" ");
 
+async function callClaude({ system, content, model, max_tokens }) {
+  const key = anthropicKey();
+  if (!key) throw new Error("No Anthropic API key set.");
+  const r = await fetch(ANTHROPIC_BASE + "/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({
+      model: model || DEFAULT_MODEL,
+      max_tokens: Math.min(Number(max_tokens) || 2000, 8000),
+      ...(system ? { system } : {}),
+      messages: [{ role: "user", content }],
+    }),
+  });
+  const j = await r.json();
+  if (!r.ok) throw new Error((j.error && j.error.message) || `Anthropic error ${r.status}`);
+  return {
+    text: (j.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n").trim(),
+    usage: j.usage || null,
+  };
+}
+
+// Pull the real job description: Workday's JSON detail API when we have it,
+// otherwise the posting page's own HTML.
+async function fetchJobDescription({ detailUrl, url }) {
+  const ua = { "User-Agent": "Mozilla/5.0 (compatible; DeskTrack/1.0)", Accept: "application/json,text/html" };
+  if (detailUrl && /^https:\/\/[\w.-]+\.myworkdayjobs\.com\//i.test(detailUrl)) {
+    try {
+      const r = await fetch(detailUrl, { headers: ua });
+      if (r.ok) {
+        const j = await r.json();
+        const info = j.jobPostingInfo || {};
+        const body = [info.jobDescription || "", info.jobRequisitionLocation && info.jobRequisitionLocation.descriptor || ""].join("\n");
+        const text = stripHtml(body);
+        if (text.length > 120) return text.slice(0, 18000);
+      }
+    } catch (e) { /* fall through to the page */ }
+  }
+  if (url && /^https?:\/\//i.test(url)) {
+    try {
+      const r = await fetch(url, { headers: ua, redirect: "follow" });
+      if (r.ok) {
+        const html = await r.text();
+        // drop site chrome so we pay tokens for the posting, not the menu
+        const body = html
+          .replace(/<(nav|header|footer|aside|form|noscript)[\s\S]*?<\/\1>/gi, " ")
+          .replace(/<!--[\s\S]*?-->/g, " ");
+        const text = stripHtml(body);
+        if (text.length > 200) return text.slice(0, 18000);
+      }
+    } catch (e) { /* nothing more to try */ }
+  }
+  return "";
+}
+
+const JOB_SUMMARY_SYSTEM = [
+  "You brief a candidate targeting fixed income sales & trading roles on a job posting.",
+  "Output GitHub-flavoured markdown with these sections, in order, omitting any section you have no real information for:",
+  "**The role** — 2 to 4 bullets: desk/product, what they'd actually do day to day, seniority, comp if stated.",
+  "**They want** — 3 to 5 bullets: required experience, licences, technical skills. Mark anything non-negotiable.",
+  "**Worth knowing** — 1 to 3 bullets: location/hybrid, deadlines, team size, anything unusual or a red flag.",
+  "Rules: never copy sentences from the posting — compress into your own words.",
+  "Keep every bullet under 20 words. No preamble, no closing commentary, no invented details.",
+  "If the text provided is not actually a job description, reply exactly: NO_DESCRIPTION"
+].join(" ");
+
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -549,6 +614,51 @@ const server = http.createServer(async (req, res) => {
       beforeWriteBackups();
       persist();
       return send(res, 200, { scanned: mail.length, newMail: fresh.length, added: added.length, jobs: added });
+    } catch (e) {
+      return send(res, 502, { error: String(e.message || e) });
+    }
+  }
+
+  if (p === "/api/ai/jobsummary" && req.method === "POST") {
+    const body = await readBody(req);
+    const id = String(body.id || "").slice(0, 200);
+    if (!id) return send(res, 400, { error: "missing job id" });
+    const cache = store.jobSummaries || {};
+    if (cache[id] && !body.force) return send(res, 200, { ...cache[id], cached: true });
+    if (!anthropicKey()) return send(res, 400, { error: "Add your Anthropic API key in the Letters tab first." });
+    try {
+      let desc = String(body.text || "").trim();
+      if (desc.length < 200) {
+        const fetched = await fetchJobDescription({ detailUrl: body.detailUrl, url: body.url });
+        if (fetched.length > desc.length) desc = fetched;
+      }
+      if (desc.length < 120) {
+        return send(res, 200, {
+          summary: "",
+          note: "Couldn't read this posting's description automatically — the site blocks it or needs a login. Open the posting to read it.",
+          at: Date.now(),
+        });
+      }
+      const head = [body.title, body.firm, body.location].filter(Boolean).join(" · ");
+      const r = await callClaude({
+        system: JOB_SUMMARY_SYSTEM,
+        max_tokens: 1200,
+        content: [{ type: "text", text: `POSTING: ${head}\n\n${desc}` }],
+      });
+      const text = (r.text || "").trim();
+      if (!text || /^NO_DESCRIPTION$/i.test(text)) {
+        return send(res, 200, { summary: "", note: "That page didn't contain a readable job description.", at: Date.now() });
+      }
+      const rec = { summary: text, at: Date.now(), usage: r.usage || null };
+      cache[id] = rec;
+      // keep the cache from growing without bound
+      const keys = Object.keys(cache);
+      if (keys.length > 400) {
+        keys.sort((a, b) => (cache[a].at || 0) - (cache[b].at || 0)).slice(0, keys.length - 400).forEach((k) => delete cache[k]);
+      }
+      store.jobSummaries = cache;
+      persist();
+      return send(res, 200, { ...rec, cached: false });
     } catch (e) {
       return send(res, 502, { error: String(e.message || e) });
     }
