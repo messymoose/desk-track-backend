@@ -426,10 +426,251 @@ const JOB_SUMMARY_SYSTEM = [
   "If the text provided is not actually a job description, reply exactly: NO_DESCRIPTION"
 ].join(" ");
 
+// ============ CardDAV (read-only): DESK/TRACK contacts -> Apple Contacts ============
+// Apple's Contacts app subscribes to this like any CardDAV account. One address book,
+// one-way: DESK/TRACK stays the source of truth, edits made on the phone are refused.
+const DAV_ROOT = "/dav/";
+const DAV_PRINCIPAL = "/dav/principal/";
+const DAV_HOME = "/dav/addressbooks/";
+const DAV_BOOK = "/dav/addressbooks/desktrack/";
+
+function davAuthed(req) {
+  const h = req.headers["authorization"] || "";
+  let pass = "";
+  if (h.startsWith("Basic ")) {
+    const raw = Buffer.from(h.slice(6).trim(), "base64").toString("utf8");
+    const i = raw.indexOf(":");
+    pass = i >= 0 ? raw.slice(i + 1) : "";
+  } else if (h.startsWith("Bearer ")) {
+    pass = h.slice(7);
+  }
+  const a = Buffer.from(pass.trim()), b = Buffer.from(PASSPHRASE);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+function readRaw(req, limit = 2e6) {
+  return new Promise((resolve) => {
+    let d = "";
+    req.on("data", (c) => { d += c; if (d.length > limit) req.destroy(); });
+    req.on("end", () => resolve(d));
+    req.on("error", () => resolve(""));
+  });
+}
+
+function xmlEsc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+// --- vCard 3.0 (the version Apple's CardDAV client handles most reliably) ---
+function vEsc(s) {
+  return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\r?\n/g, "\\n");
+}
+function vFold(line) {
+  // RFC 6350/2426: lines over 75 octets are folded with CRLF + space
+  const bytes = Buffer.from(line, "utf8");
+  if (bytes.length <= 75) return line;
+  const out = [];
+  let cur = "";
+  for (const ch of line) {
+    if (Buffer.byteLength(cur + ch, "utf8") > (out.length ? 74 : 75)) { out.push(cur); cur = ""; }
+    cur += ch;
+  }
+  if (cur) out.push(cur);
+  return out.join("\r\n ");
+}
+function cardUid(c) { return "desktrack-" + String(c.id).replace(/[^\w-]/g, ""); }
+function cardFile(c) { return cardUid(c) + ".vcf"; }
+
+function contactToVCard(c) {
+  const name = String(c.name || "Unnamed").trim();
+  const parts = name.split(/\s+/);
+  const last = parts.length > 1 ? parts[parts.length - 1] : "";
+  const first = parts.length > 1 ? parts.slice(0, -1).join(" ") : parts[0];
+  const L = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    "PRODID:-//DESK-TRACK//CardDAV//EN",
+    "UID:" + cardUid(c),
+    "FN:" + vEsc(name),
+    "N:" + [vEsc(last), vEsc(first), "", "", ""].join(";"),
+  ];
+  if (c.firm) L.push("ORG:" + vEsc(c.firm) + (c.desk ? ";" + vEsc(c.desk) : ""));
+  const title = [c.note, !c.firm && c.desk ? c.desk : ""].filter(Boolean).join(" · ");
+  if (title) L.push("TITLE:" + vEsc(title));
+  if (c.phone) L.push("TEL;TYPE=CELL,VOICE:" + vEsc(c.phone));
+  if (c.email) L.push("EMAIL;TYPE=INTERNET,WORK:" + vEsc(String(c.email).trim()));
+  if (c.linkedin) {
+    const url = /^https?:\/\//i.test(c.linkedin) ? c.linkedin : "https://" + c.linkedin;
+    L.push("item1.URL:" + vEsc(url));
+    L.push("item1.X-ABLabel:LinkedIn");
+  }
+  const noteBits = [];
+  if (c.referredBy) noteBits.push("Introduced via " + c.referredBy);
+  if (c.status) noteBits.push("Status: " + c.status);
+  if ((c.tags || []).length) noteBits.push("Tags: " + c.tags.map((t) => "#" + t).join(" "));
+  const last3 = (c.log || []).slice(0, 3);
+  if (last3.length) {
+    noteBits.push("Recent:\n" + last3.map((l) => `${new Date(l.at).toISOString().slice(0, 10)} ${l.text || ""}`).join("\n"));
+  }
+  if (c.followUpDate) noteBits.push("Follow up " + c.followUpDate);
+  noteBits.push("Managed by DESK/TRACK — edit there, not here.");
+  L.push("NOTE:" + vEsc(noteBits.join("\n")));
+  L.push("CATEGORIES:" + ["DESK/TRACK", ...(c.tags || [])].map(vEsc).join(","));
+  const rev = c.lastContacted || c.addedAt || Date.now();
+  L.push("REV:" + new Date(rev).toISOString().replace(/[-:]/g, "").replace(/\.\d+/, ""));
+  L.push("END:VCARD");
+  return L.map(vFold).join("\r\n") + "\r\n";
+}
+
+function etagOf(text) {
+  return '"' + crypto.createHash("sha1").update(text).digest("hex").slice(0, 20) + '"';
+}
+function davCards() {
+  return (store.contacts || [])
+    .filter((c) => c && c.id != null && (c.name || "").trim())
+    .map((c) => { const vcard = contactToVCard(c); return { c, file: cardFile(c), vcard, etag: etagOf(vcard) }; });
+}
+function bookCtag(cards) {
+  return etagOf(cards.map((x) => x.file + x.etag).join("|")).replace(/"/g, "");
+}
+
+// --- multistatus builders ---
+function msResponse(href, props) {
+  return `<d:response><d:href>${xmlEsc(href)}</d:href><d:propstat><d:prop>${props}</d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>`;
+}
+function multistatus(responses) {
+  return `<?xml version="1.0" encoding="utf-8"?>\n<d:multistatus xmlns:d="DAV:" xmlns:card="urn:ietf:params:xml:ns:carddav" xmlns:cs="http://calendarserver.org/ns/">${responses.join("")}</d:multistatus>`;
+}
+const READ_ONLY_PRIVS = "<d:current-user-privilege-set><d:privilege><d:read/></d:privilege><d:privilege><d:read-current-user-privilege-set/></d:privilege></d:current-user-privilege-set>";
+function principalProps() {
+  return `<d:current-user-principal><d:href>${DAV_PRINCIPAL}</d:href></d:current-user-principal>` +
+    `<d:principal-URL><d:href>${DAV_PRINCIPAL}</d:href></d:principal-URL>` +
+    `<card:addressbook-home-set><d:href>${DAV_HOME}</d:href></card:addressbook-home-set>`;
+}
+function bookProps(cards) {
+  return `<d:resourcetype><d:collection/><card:addressbook/></d:resourcetype>` +
+    `<d:displayname>DESK/TRACK</d:displayname>` +
+    `<card:addressbook-description>Contacts from DESK/TRACK (read-only)</card:addressbook-description>` +
+    `<cs:getctag>${bookCtag(cards)}</cs:getctag>` +
+    `<card:supported-address-data><card:address-data-type content-type="text/vcard" version="3.0"/></card:supported-address-data>` +
+    `<d:supported-report-set>` +
+      `<d:supported-report><d:report><card:addressbook-multiget/></d:report></d:supported-report>` +
+      `<d:supported-report><d:report><card:addressbook-query/></d:report></d:supported-report>` +
+    `</d:supported-report-set>` +
+    READ_ONLY_PRIVS +
+    `<d:owner><d:href>${DAV_PRINCIPAL}</d:href></d:owner>` +
+    `<d:current-user-principal><d:href>${DAV_PRINCIPAL}</d:href></d:current-user-principal>`;
+}
+function cardProps(x, withData) {
+  return `<d:getetag>${xmlEsc(x.etag)}</d:getetag><d:getcontenttype>text/vcard; charset=utf-8</d:getcontenttype>` +
+    `<d:resourcetype/>` + (withData ? `<card:address-data>${xmlEsc(x.vcard)}</card:address-data>` : "");
+}
+
+function davSend(res, code, body, extra = {}) {
+  res.writeHead(code, {
+    "Content-Type": "application/xml; charset=utf-8",
+    DAV: "1, 3, addressbook",
+    ...extra,
+  });
+  res.end(body || "");
+}
+
+// Returns true if it handled the request.
+async function handleDav(req, res, p) {
+  const isDavPath = p === "/.well-known/carddav" || p === "/dav" || p.startsWith("/dav/");
+  const isRootDiscovery = p === "/" && ["PROPFIND", "REPORT"].includes(req.method);
+  if (!isDavPath && !isRootDiscovery) return false;
+
+  // Apple checks OPTIONS for the "addressbook" capability before anything else
+  if (req.method === "OPTIONS") {
+    res.writeHead(200, {
+      DAV: "1, 3, addressbook",
+      Allow: "OPTIONS, GET, HEAD, PROPFIND, REPORT",
+      "Content-Length": "0",
+    });
+    return res.end(), true;
+  }
+  if (p === "/.well-known/carddav") {
+    res.writeHead(301, { Location: DAV_ROOT });
+    return res.end(), true;
+  }
+  if (!davAuthed(req)) {
+    res.writeHead(401, { "WWW-Authenticate": 'Basic realm="DESK/TRACK"', "Content-Type": "text/plain" });
+    return res.end("Use your DESK/TRACK passphrase as the password."), true;
+  }
+
+  const path = p.endsWith("/") || p.endsWith(".vcf") ? p : p + "/";
+  const depth = String(req.headers["depth"] || "0");
+  const cards = davCards();
+
+  if (req.method === "PROPFIND") {
+    await readRaw(req);
+    if (path === "/" || path === DAV_ROOT || path === DAV_PRINCIPAL) {
+      const rt = path === DAV_PRINCIPAL ? "<d:resourcetype><d:principal/><d:collection/></d:resourcetype>" : "<d:resourcetype><d:collection/></d:resourcetype>";
+      return davSend(res, 207, multistatus([
+        msResponse(path, rt + `<d:displayname>DESK/TRACK</d:displayname>` + principalProps()),
+      ])), true;
+    }
+    if (path === DAV_HOME) {
+      const out = [msResponse(DAV_HOME, "<d:resourcetype><d:collection/></d:resourcetype>" + principalProps() + READ_ONLY_PRIVS)];
+      if (depth !== "0") out.push(msResponse(DAV_BOOK, bookProps(cards)));
+      return davSend(res, 207, multistatus(out)), true;
+    }
+    if (path === DAV_BOOK) {
+      const out = [msResponse(DAV_BOOK, bookProps(cards))];
+      if (depth !== "0") cards.forEach((x) => out.push(msResponse(DAV_BOOK + x.file, cardProps(x, false))));
+      return davSend(res, 207, multistatus(out)), true;
+    }
+    if (path.startsWith(DAV_BOOK) && path.endsWith(".vcf")) {
+      const x = cards.find((y) => DAV_BOOK + y.file === path);
+      if (!x) return davSend(res, 404, ""), true;
+      return davSend(res, 207, multistatus([msResponse(path, cardProps(x, false))])), true;
+    }
+    return davSend(res, 404, ""), true;
+  }
+
+  if (req.method === "REPORT") {
+    const body = await readRaw(req);
+    if (path !== DAV_BOOK) return davSend(res, 404, ""), true;
+    let pick = cards;
+    if (/addressbook-multiget/i.test(body)) {
+      const hrefs = [...body.matchAll(/<(?:[\w-]+:)?href[^>]*>\s*([^<\s]+)\s*<\/(?:[\w-]+:)?href>/gi)]
+        .map((m) => { try { return decodeURIComponent(m[1]); } catch { return m[1]; } })
+        .map((h) => h.replace(/^https?:\/\/[^/]+/i, ""));
+      pick = cards.filter((x) => hrefs.includes(DAV_BOOK + x.file));
+      const missing = hrefs.filter((h) => !cards.some((x) => DAV_BOOK + x.file === h));
+      const out = pick.map((x) => msResponse(DAV_BOOK + x.file, cardProps(x, true)));
+      missing.forEach((h) => out.push(`<d:response><d:href>${xmlEsc(h)}</d:href><d:status>HTTP/1.1 404 Not Found</d:status></d:response>`));
+      return davSend(res, 207, multistatus(out)), true;
+    }
+    // addressbook-query (and anything else): return everything
+    return davSend(res, 207, multistatus(pick.map((x) => msResponse(DAV_BOOK + x.file, cardProps(x, true))))), true;
+  }
+
+  if (req.method === "GET" || req.method === "HEAD") {
+    if (path.startsWith(DAV_BOOK) && path.endsWith(".vcf")) {
+      const x = cards.find((y) => DAV_BOOK + y.file === path);
+      if (!x) { res.writeHead(404); return res.end(), true; }
+      res.writeHead(200, { "Content-Type": "text/vcard; charset=utf-8", ETag: x.etag });
+      return res.end(req.method === "HEAD" ? "" : x.vcard), true;
+    }
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    return res.end("DESK/TRACK CardDAV. Add this server as a CardDAV account in Apple Contacts."), true;
+  }
+
+  // PUT / DELETE / MKCOL / PROPPATCH / MOVE / COPY: read-only
+  res.writeHead(403, { "Content-Type": "text/plain" });
+  return res.end("DESK/TRACK contacts are read-only here. Edit them in the app."), true;
+}
+
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  {
+    const u0 = new URL(req.url, "http://x");
+    if (await handleDav(req, res, u0.pathname)) return;
+  }
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
 
   const url = new URL(req.url, "http://x");
@@ -674,5 +915,6 @@ server.listen(PORT, () => {
   console.log("DATA_DIR:", DATA_DIR);
   console.log("Data file:", DATA_FILE);
   console.log("Passphrase length:", PASSPHRASE.length, PASSPHRASE === "changeme" ? "(WARNING: default)" : "(custom set)");
+  console.log("CardDAV: /dav/ (Apple Contacts, read-only)");
   console.log("Ready.");
 });
